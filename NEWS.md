@@ -12,6 +12,7 @@
 * Create a JSON interface for the forest plots #87
 * Outputs should not be stored in the forest plots or sensitivity analysis anymore #88
 * Create a JSON interface for the sensitivity analyses #89
+* Migrate package to campsisverse organisation #90
 
 # campsismisc 1.0.0
 

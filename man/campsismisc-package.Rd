@@ -11,8 +11,8 @@ A collection of utilities extending the 'campsis' ecosystem, with a primary focu
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/Calvagone/campsismisc}
-  \item Report bugs at \url{https://github.com/Calvagone/campsismisc/issues}
+  \item \url{https://github.com/campsisverse/campsismisc}
+  \item Report bugs at \url{https://github.com/campsisverse/campsismisc/issues}
 }
 
 }

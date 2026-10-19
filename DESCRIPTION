@@ -19,8 +19,8 @@ Description: A collection of utilities extending the 'campsis' ecosystem,
     'campsismod' and 'campsisnca', supporting efficient simulation,
     analysis and interpretation workflows.
 License: GPL (>= 3)
-URL: https://github.com/Calvagone/campsismisc
-BugReports: https://github.com/Calvagone/campsismisc/issues
+URL: https://github.com/campsisverse/campsismisc
+BugReports: https://github.com/campsisverse/campsismisc/issues
 Depends: 
     campsismod,
     R (>= 4.1.0)

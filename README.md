@@ -3,9 +3,9 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/Calvagone/campsismisc/workflows/R-CMD-check/badge.svg)](https://github.com/Calvagone/campsismisc/actions)
+[![R-CMD-check](https://github.com/campsisverse/campsismisc/workflows/R-CMD-check/badge.svg)](https://github.com/campsisverse/campsismisc/actions)
 [![Codecov test
-coverage](https://codecov.io/gh/Calvagone/campsismisc/graph/badge.svg)](https://app.codecov.io/gh/Calvagone/campsismisc)
+coverage](https://codecov.io/gh/campsisverse/campsismisc/graph/badge.svg)](https://app.codecov.io/gh/campsisverse/campsismisc)
 <!-- badges: end -->
 
 ## Forest plots
