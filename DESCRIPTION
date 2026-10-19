@@ -50,7 +50,7 @@ Suggests:
     tibble,
     tictoc
 Remotes:
-    Calvagone/campsismod@develop
+    campsisverse/campsismod@develop
 Encoding: UTF-8
 Language: en-US
 LazyData: true
