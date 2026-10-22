@@ -5,7 +5,8 @@
       "*.R": "allow",
       "*.Rmd": "allow",
       "*.json": "allow",
-      "*/DESCRIPTION": "allow"
+      "*/DESCRIPTION": "allow",
+      "*/NAMESPACE": "allow"
     },
     "bash": {
       "Rscript *": "allow",

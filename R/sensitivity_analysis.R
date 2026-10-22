@@ -174,10 +174,9 @@ setMethod(
     ...
   ) {
     is_sensitivity_analysis <- is(object, "sensitivity_analysis")
-    i_results <- object@results@list[[index]]
-    output <- i_results@output
-    results <- i_results@results
-    baseline <- i_results@baseline
+    output <- object@transient_outputs@metrics@list[[index]]
+    results <- object@transient_results |> dplyr::filter(.data$output_index == index)
+    baseline <- results$baseline[1]
 
     # Check limits argument
     if (any(is.na(limits))) {

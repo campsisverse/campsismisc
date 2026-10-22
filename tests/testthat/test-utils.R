@@ -17,8 +17,9 @@ get_model <- function(name) {
 #' @param index output index to be checked
 #' @importFrom tibble as_tibble
 oat_analysis_regression_test <- function(object, filename, index = 1) {
-  i_results <- object@results@list[[index]]
-  results <- i_results@results %>%
+  results <- object@transient_results %>%
+    dplyr::filter(.data$output_index == index) %>%
+    dplyr::select(-dplyr::any_of(c("output_index", "baseline"))) %>%
     strip_metadata() %>%
     dplyr::mutate_if(is.factor, as.character) %>%
     dplyr::mutate_if(is.numeric, round, digits = 2)

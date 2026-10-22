@@ -8,10 +8,14 @@
 setClass(
   "oat_analysis",
   representation(
-    results = "oat_analysis_results",
+    transient_results = "data.frame",
+    transient_outputs = "ANY", # Store the NCA analysis
     transient_model = "campsis_model" # Transient field used to store the model
   ),
-  prototype = prototype(transient_model=campsismod::CampsisModel())
+  prototype = prototype(
+    transient_results = data.frame(),
+    transient_model = campsismod::CampsisModel()
+  )
 )
 
 #_______________________________________________________________________________
@@ -196,18 +200,16 @@ setMethod(
     )
 
     # Post-processing
-    tmp_results <- purrr::map2(.x = outputs@metrics@list, .y = baselines, .f = function(output, baseline) {
-      res <- OATResult(
-        output = output,
-        baseline = baseline,
-        results = post_process_scenarios(object = all_results, output = output)
-      )
+    transient_results <- purrr::imap_dfr(.x = outputs@metrics@list, .f = function(output, index) {
+      res <- post_process_scenarios(object = all_results, output = output)
+      res$output_index <- index
+      res$baseline <- baselines[[index]]
       return(res)
     })
 
     # Save
-    object@results <- OATResults() |>
-      add(tmp_results)
+    object@transient_results <- transient_results
+    object@transient_outputs <- outputs
 
     return(object)
   }
