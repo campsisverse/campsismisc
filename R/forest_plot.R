@@ -67,7 +67,7 @@ setMethod(
 #_______________________________________________________________________________
 
 setMethod("load_from_json", signature = c("forest_plot", "json_element"), definition = function(object, json) {
-  object@items@list <- json@data$items %>%
+  object@items@list <- json@data$items |>
     purrr::map(~ load_from_json(new("forest_plot_item"), JSONElement(.x)))
   return(object)
 })

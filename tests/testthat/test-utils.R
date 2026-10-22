@@ -34,13 +34,13 @@ oat_analysis_regression_test <- function(object, filename, index = 1) {
 }
 
 no_engine_installed <- function() {
-  cond1 <- engineInstalled("RxODE")
-  cond2 <- engineInstalled("rxode2")
-  cond3 <- engineInstalled("mrgsolve")
+  cond1 <- engine_installed("RxODE")
+  cond2 <- engine_installed("rxode2")
+  cond3 <- engine_installed("mrgsolve")
   return(!(cond1 || cond2 || cond3))
 }
 
-engineInstalled <- function(name) {
+engine_installed <- function(name) {
   return(find.package(name, quiet = TRUE) %>% length() > 0)
 }
 
@@ -50,7 +50,7 @@ campsismisc_test <- function(simulation, test, env) {
     env$destEngine <- testEngine
     # Check if package exists (as test engines are suggested packages)
     # This is needed for CRAN when package is tested with `_R_CHECK_DEPENDS_ONLY_`=TRUE
-    if (engineInstalled(testEngine)) {
+    if (engine_installed(testEngine)) {
       env$results <- eval(simulation, envir = env)
       eval(test, envir = env)
     }

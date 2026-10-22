@@ -15,18 +15,18 @@ open_json <- function(json, schema = NULL) {
   assertthat::assert_that(length(json) == 1, msg = "Argument json must be a path or the JSON string")
 
   if (grepl(pattern = "\\s*[\\{\\[]", x = json)) {
-    rawJson <- json
+    raw_json <- json
   } else {
-    rawJson <- suppressWarnings(paste0(readLines(json), collapse = "\n"))
+    raw_json <- suppressWarnings(paste0(readLines(json), collapse = "\n"))
   }
 
   # Validate content against schema
   if (!is.null(schema)) {
     obj <- jsonvalidate::json_schema$new(schema)
-    obj$validate(rawJson, error = TRUE)
+    obj$validate(raw_json, error = TRUE)
   }
 
-  json_ <- jsonlite::parse_json(rawJson, simplifyVector = FALSE)
+  json_ <- jsonlite::parse_json(raw_json, simplifyVector = FALSE)
 
   return(campsismod::JSONElement(json_))
 }

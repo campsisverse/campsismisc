@@ -127,7 +127,7 @@ setMethod(
 #_______________________________________________________________________________
 
 setMethod("load_from_json", signature = c("sensitivity_analysis", "json_element"), definition = function(object, json) {
-  object@items@list <- json@data$items %>%
+  object@items@list <- json@data$items |>
     purrr::map(~ load_from_json(new("sensitivity_analysis_item"), JSONElement(.x)))
   return(object)
 })
