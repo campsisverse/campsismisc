@@ -8,7 +8,7 @@ source(file.path(getwd(), test_path(), "test-utils.R"))
 
 test_that("Forest plot: effect of METAB (0/1) and WT on CL (rxode2/mrgsolve)", {
   model <- get_model("metaboliser_effect_on_cl") %>%
-    add(NumericCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+    add(ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
     add(CategoricalCovariateDefinition(
       name = "METAB",
       default_value = 0,
@@ -46,7 +46,7 @@ test_that("Forest plot: effect of METAB (0/1) and WT on CL (rxode2/mrgsolve)", {
 
 test_that("Forest plot: effect of METAB (0/1) and WT on AUC0-24 (rxode2/mrgsolve)", {
   model <- get_model("metaboliser_effect_on_cl") %>%
-    add(NumericCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+    add(ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
     add(CategoricalCovariateDefinition(
       name = "METAB",
       default_value = 0,
@@ -85,7 +85,7 @@ test_that("Forest plot: effect of METAB (0/1) and WT on AUC0-24 (rxode2/mrgsolve
 
 test_that("Forest plot: effect of METAB (0/1) and WT on AUC144-168 (rxode2/mrgsolve)", {
   model <- get_model("metaboliser_effect_on_cl") %>%
-    add(NumericCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+    add(ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
     add(CategoricalCovariateDefinition(
       name = "METAB",
       default_value = 0,
@@ -124,7 +124,7 @@ test_that("Forest plot: effect of METAB (0/1) and WT on AUC144-168 (rxode2/mrgso
 
 test_that("Forest plots must work when only 1 item is simulated (rxode2/mrgsolve)", {
   model <- get_model("metaboliser_effect_on_cl") %>%
-    add(NumericCovariateDefinition(name = "WT", default_value = 70, label = "Weight")) %>%
+    add(ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight")) %>%
     add(CategoricalCovariateDefinition(
       name = "METAB",
       default_value = 0,

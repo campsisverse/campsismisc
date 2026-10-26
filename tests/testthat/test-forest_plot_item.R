@@ -5,7 +5,7 @@ context("Test all methods from the forest plot class")
 
 test_that("Method get_label is working as expected with continuous labeled covariates", {
   model <- CampsisModel() %>%
-    add(NumericCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg"))
+    add(ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg"))
   item <- ForestPlotItem(Covariate("WT", 60))
 
   expect_equal(item %>% get_label(model = model), "Weight: 60 kg")
@@ -26,7 +26,7 @@ test_that("Method get_label is working as expected with categorical labeled cova
 
 test_that("Unit is optional in the continuous labeled covariate", {
   model <- CampsisModel() %>%
-    add(NumericCovariateDefinition(name = "WT", default_value = 70, label = "Weight"))
+    add(ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight"))
 
   item <- ForestPlotItem(Covariate("WT", 65))
 

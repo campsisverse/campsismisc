@@ -101,7 +101,7 @@ campsismod syntax, as follows:
 
 ``` r
 model <- model %>%
-  add(NumericCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+  add(ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
   add(CategoricalCovariateDefinition(
     name = "METAB",
     default_value = 0,
