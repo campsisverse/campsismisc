@@ -80,6 +80,7 @@ setGeneric("get_label", function(object, ...) {
 #' @param object generic object
 #' @param index output number, 1 by default
 #' @param relative relative change or absolute value, logical
+#' @param show_footnote show footnote about reference subject and CI percentage
 #' @param show_labels show the numeric labels
 #' @param show_ref show vertical reference (at 1 or at the baseline)
 #' @param show_range show vertical dashed lines, logical
@@ -90,7 +91,7 @@ setGeneric("get_label", function(object, ...) {
 #' @return ggplot
 #' @export
 #' @rdname get_forest_plot
-get_forest_plot <- function(object, index, relative, show_labels, show_ref, show_range, range, ci, limits, ...) {
+get_forest_plot <- function(object, index, relative, show_footnote, show_labels, show_ref, show_range, range, ci, limits, ...) {
   no_default_function_provided_debug(mget(names(formals()), envir = environment()), "get_forest_plot")
 }
 
@@ -100,6 +101,7 @@ setGeneric(
     object,
     index = NULL,
     relative = NULL,
+    show_footnote = NULL,
     show_labels = NULL,
     show_ref = NULL,
     show_range = NULL,
@@ -115,6 +117,9 @@ setGeneric(
     }
     if (is.null(relative)) {
       relative <- TRUE
+    }
+    if (is.null(show_footnote)) {
+      show_footnote <- TRUE
     }
     if (is.null(show_labels)) {
       show_labels <- TRUE

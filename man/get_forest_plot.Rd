@@ -2,13 +2,14 @@
 % Please edit documentation in R/generic.R, R/forest_plot.R
 \name{get_forest_plot}
 \alias{get_forest_plot}
-\alias{get_forest_plot,forest_plot,integer,logical,logical,logical,logical,numeric,numeric,numeric-method}
+\alias{get_forest_plot,forest_plot,integer,logical,logical,logical,logical,logical,numeric,numeric,numeric-method}
 \title{Get forest plot.}
 \usage{
 get_forest_plot(
   object,
   index = NULL,
   relative = NULL,
+  show_footnote = NULL,
   show_labels = NULL,
   show_ref = NULL,
   show_range = NULL,
@@ -18,10 +19,11 @@ get_forest_plot(
   ...
 )
 
-\S4method{get_forest_plot}{forest_plot,integer,logical,logical,logical,logical,numeric,numeric,numeric}(
+\S4method{get_forest_plot}{forest_plot,integer,logical,logical,logical,logical,logical,numeric,numeric,numeric}(
   object,
   index,
   relative,
+  show_footnote,
   show_labels,
   show_ref,
   show_range,
@@ -43,6 +45,8 @@ get_forest_plot(
 \item{index}{output number, 1 by default}
 
 \item{relative}{relative change or absolute value, logical}
+
+\item{show_footnote}{show footnote about reference subject and CI percentage}
 
 \item{show_labels}{show the numeric labels}
 

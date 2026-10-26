@@ -10,7 +10,8 @@ setClass(
   representation(
     items = "forest_plot_items"
   ),
-  contains = "oat_analysis")
+  contains = "oat_analysis"
+)
 
 #' Create a forest plot.
 #'
@@ -97,11 +98,23 @@ setMethod("load_from_json", signature = c("forest_plot", "list"), definition = f
 #' @importFrom ggplot2 ggplot aes geom_point geom_errorbar geom_hline geom_label coord_flip ylab xlab
 setMethod(
   "get_forest_plot",
-  signature = c("forest_plot", "integer", "logical", "logical", "logical", "logical", "numeric", "numeric", "numeric"),
+  signature = c(
+    "forest_plot",
+    "integer",
+    "logical",
+    "logical",
+    "logical",
+    "logical",
+    "logical",
+    "numeric",
+    "numeric",
+    "numeric"
+  ),
   definition = function(
     object,
     index,
     relative,
+    show_footnote,
     show_labels,
     show_ref,
     show_range,
@@ -177,6 +190,41 @@ setMethod(
       ggplot2::ylab(paste0(ifelse(relative, "Relative ", ""), output |> get_name())) +
       ggplot2::xlab(NULL)
 
+    if (show_footnote) {
+      error_bar_label <- sprintf("Error bars represent %s%% confidence intervals.", as.character(ci * 100))
+      covariates <- object@transient_model@covariates
+      ref_subject_label <- reference_subject_footnote(covariates)
+      plot <- plot +
+        ggplot2::labs(caption = paste0(error_bar_label, "\n", ref_subject_label))
+    }
+
     return(plot)
   }
 )
+
+reference_subject_footnote <- function(covariates) {
+  items <- covariates@list |>
+    purrr::map_chr(.f = function(covariate) {
+      if (is(covariate, "categorical_covariate_definition")) {
+        return(
+          sprintf(
+            "%s=%s",
+            covariate@label,
+            names(covariate@categories)[which(covariate@categories == covariate@default_value)]
+          )
+        )
+      } else if (is(covariate, "continuous_covariate_definition")) {
+        return(
+          sprintf(
+            "%s=%s%s",
+            covariate@label,
+            covariate@default_value,
+            ifelse(is.na(covariate@unit), "", covariate@unit)
+          )
+        )
+      } else {
+        "?"
+      }
+    })
+  return(sprintf("Reference subject: %s.", paste0(items, collapse = ", ")))
+}
