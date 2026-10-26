@@ -154,3 +154,42 @@ test_that("Forest plots must work when only 1 item is simulated (rxode2/mrgsolve
   )
   campsismisc_test(simulation, test, env = environment())
 })
+
+test_that("Forest plot caption works as expected", {
+  # 1. Continuous and categorical covariates
+  covariates <- campsismod::CovariateDefinitions() %>%
+    campsismod::add(campsismod::ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+    campsismod::add(campsismod::CategoricalCovariateDefinition(
+      name = "METAB",
+      default_value = 0,
+      label = "Metaboliser",
+      categories = c(Slow = 0, Fast = 1)
+    ))
+
+  caption <- reference_subject_caption(covariates)
+  expect_equal(caption, "Reference subject: Weight=70kg, Metaboliser=Slow.")
+
+  # 2. Continuous covariate without unit
+  covariates <- campsismod::CovariateDefinitions() %>%
+    campsismod::add(campsismod::ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight"))
+  caption <- reference_subject_caption(covariates)
+  expect_equal(caption, "Reference subject: Weight=70.")
+
+  # 3. No covariates
+  covariates <- campsismod::CovariateDefinitions()
+  caption <- reference_subject_caption(covariates)
+  expect_equal(caption, "Reference subject: .")
+
+  # 4. Multiple mixed covariates
+  covariates <- campsismod::CovariateDefinitions() %>%
+    campsismod::add(campsismod::ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+    campsismod::add(campsismod::CategoricalCovariateDefinition(
+      name = "METAB",
+      default_value = 0,
+      label = "Metaboliser",
+      categories = c(Slow = 0, Fast = 1)
+    )) %>%
+    campsismod::add(campsismod::ContinuousCovariateDefinition(name = "AGE", default_value = 40, label = "Age", unit = "y"))
+  caption <- reference_subject_caption(covariates)
+  expect_equal(caption, "Reference subject: Weight=70kg, Metaboliser=Slow, Age=40y.")
+})

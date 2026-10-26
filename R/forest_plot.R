@@ -114,7 +114,7 @@ setMethod(
     object,
     index,
     relative,
-    show_footnote,
+    show_caption,
     show_labels,
     show_ref,
     show_range,
@@ -190,10 +190,10 @@ setMethod(
       ggplot2::ylab(paste0(ifelse(relative, "Relative ", ""), output |> get_name())) +
       ggplot2::xlab(NULL)
 
-    if (show_footnote) {
+    if (show_caption) {
       error_bar_label <- sprintf("Error bars represent %s%% confidence intervals.", as.character(ci * 100))
       covariates <- object@transient_model@covariates
-      ref_subject_label <- reference_subject_footnote(covariates)
+      ref_subject_label <- reference_subject_caption(covariates)
       plot <- plot +
         ggplot2::labs(caption = paste0(error_bar_label, "\n", ref_subject_label))
     }
@@ -202,7 +202,7 @@ setMethod(
   }
 )
 
-reference_subject_footnote <- function(covariates) {
+reference_subject_caption <- function(covariates) {
   items <- covariates@list |>
     purrr::map_chr(.f = function(covariate) {
       if (is(covariate, "categorical_covariate_definition")) {

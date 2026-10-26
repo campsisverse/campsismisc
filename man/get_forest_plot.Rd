@@ -9,7 +9,7 @@ get_forest_plot(
   object,
   index = NULL,
   relative = NULL,
-  show_footnote = NULL,
+  show_caption = NULL,
   show_labels = NULL,
   show_ref = NULL,
   show_range = NULL,
@@ -23,7 +23,7 @@ get_forest_plot(
   object,
   index,
   relative,
-  show_footnote,
+  show_caption,
   show_labels,
   show_ref,
   show_range,
@@ -46,7 +46,7 @@ get_forest_plot(
 
 \item{relative}{relative change or absolute value, logical}
 
-\item{show_footnote}{show footnote about reference subject and CI percentage}
+\item{show_caption}{show caption about reference subject and CI percentage}
 
 \item{show_labels}{show the numeric labels}
 

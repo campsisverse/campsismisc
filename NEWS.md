@@ -1,5 +1,6 @@
 # campsismisc 1.1.0
 
+* Reference subject in forest plots (add caption) #31
 * Refactor Campsismisc: OAT outputs -> NCA Analysis #68
 * Update README #78
 * Labeled covariates should be moved to Campsismod #79
