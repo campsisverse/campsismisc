@@ -56,6 +56,8 @@ setGeneric("run_analysis", function(object, outputs, model, dataset = NULL, arm_
   }
   if (is.null(arm_index)) {
     arm_index <- 1L
+  } else {
+    arm_index <- as.integer(arm_index)
   }
 
   # Select specific arm

@@ -31,9 +31,9 @@ test_that("Arm selection works for sensitivity analysis", {
       DefaultSettings(replicates = 1, engine = destEngine, seed = 1)
     )
     object1 <- object %>%
-      run_analysis(outputs = outputs, model = model, dataset = dataset, arm_index = 1L, settings = settings)
+      run_analysis(outputs = outputs, model = model, dataset = dataset, arm_index = 1, settings = settings)
     object2 <- object %>%
-      run_analysis(outputs = outputs, model = model, dataset = dataset, arm_index = 2L, settings = settings)
+      run_analysis(outputs = outputs, model = model, dataset = dataset, arm_index = 2, settings = settings)
   })
 
   test <- expression({
