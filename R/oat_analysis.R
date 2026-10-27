@@ -125,33 +125,47 @@ post_process_scenarios <- function(object, output) {
 #' @importFrom progressr with_progress without_progress
 setMethod(
   "run_analysis",
-  signature = c("oat_analysis", "ANY", "campsis_model", "dataset", "simulation_settings"),
-  definition = function(object, outputs, model, dataset, settings) {
+  signature = c("oat_analysis", "ANY", "campsis_model", "dataset", "integer", "simulation_settings"),
+  definition = function(object, outputs, model, dataset, arm_index, settings) {
     # Process outputs
     outputs <- process_outputs(outputs)
 
-    # Store model in object
-    object@transient_model <- model
+    # A few checks on the given dataset
+    assertthat::assert_that(length(dataset) == 1, msg = "Your dataset must contain exactly 1 subject.")
+    assertthat::assert_that(length(dataset@arms) == 1, msg = "Your dataset must contain exactly 1 arm.")
+    assertthat::assert_that(
+      nrow(dataset@arms@list[[1]]@bootstrap@data) == 0,
+      msg = "Your dataset cannot contain a bootstrap layer"
+    )
+
+    base_dataset <- dataset
 
     # Fix IIV, VARCOV_OMEGA, VARCOV_SIGMA at the beginning!
     # This way, calling disable is not needed in the scenarios
     model_no_var <- model |>
-      disable(c("IIV", "VARCOV_OMEGA", "VARCOV_SIGMA"))
+      campsismod::disable(c("IIV", "VARCOV_OMEGA", "VARCOV_SIGMA"))
 
-    base_dataset <- dataset
+    # Store model in object
+    object@transient_model <- model
+
     if (is(object, "forest_plot")) {
+      # All covariates are removed for the forest plots
+      base_dataset@arms@list[[1]]@covariates@list <- list()
+
+      # Use default values provided in covariate definitions
       for (cov_def in model_no_var@covariates@list) {
         base_dataset <- base_dataset |>
           add(campsis::Covariate(name = cov_def@name, distribution = cov_def@default_value))
       }
+    } else {
+      # For sensitivity analyses, covariates are supposed to be fixed
     }
-    items <- object@items
 
     # Preparing settings
     settings_base_scenario <- settings
     settings_base_scenario@hardware@cpu <- 1L
     settings_base_scenario@hardware@replicate_parallel <- FALSE
-    settings_base_scenario@default@replicates <- 1L 
+    settings_base_scenario@default@replicates <- 1L
 
     # Getting all necessary 'outvars' across all outputs
     # This in order to make 1 call to the simulate method

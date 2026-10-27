@@ -8,12 +8,13 @@
 * Prepare package for future submission on CRAN #82
 * Review the use of Campsis settings in package #83
 * Review ForestPlot and SensitivityAnalysis constructors #84
-* Review the 'prepare' function (-> now run_analysis) #85
+* Review the 'prepare' function (-> now 'run_analysis') #85
 * Remove deprecated methods #86
 * Create a JSON interface for the forest plots #87
 * Outputs should not be stored in the forest plots or sensitivity analysis anymore #88
 * Create a JSON interface for the sensitivity analyses #89
 * Migrate package to campsisverse organisation #90
+* Add 'arm_index' argument to 'run_analysis' method (+ logic) #94
 
 # campsismisc 1.0.0
 

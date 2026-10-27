@@ -28,21 +28,23 @@ no_default_function_provided_debug <- function(args_list, fun_name) {
 #----                              run_analysis                             ----
 #_______________________________________________________________________________
 
-#' Run OAT analysis.
+#' Run a forest plot or sensitivity analysis.
 #'
-#' @param object OAT analysis
-#' @param outputs outputs, character vector or nca_analysis object
+#' @param object OAT analysis, a forest plot or a sensitivity analysis to execute.
+#' @param outputs outputs, character vector with the model parameters to look (e.g. 'CL') at or a NCA analysis
 #' @param model Campsis model
 #' @param dataset Campsis dataset
+#' @param arm_index arm index, default is 1L (the first arm). Allows to select a specific arm from the dataset.
 #' @param settings Campsis settings
 #' @return OAT analysis including the results
 #' @export
 #' @rdname run_analysis
-run_analysis <- function(object, outputs, model, dataset, settings) {
+run_analysis <- function(object, outputs, model, dataset, arm_index, settings) {
   stop("No default function is provided")
 }
 
-setGeneric("run_analysis", function(object, outputs, model, dataset=NULL, settings=NULL) {
+# @importFrom campsis Observations Settings set_subjects
+setGeneric("run_analysis", function(object, outputs, model, dataset = NULL, arm_index = NULL, settings = NULL) {
   if (is.null(dataset)) {
     dataset <- campsis::Dataset(1) |>
       add(campsis::Observations(times = 0))
@@ -50,6 +52,17 @@ setGeneric("run_analysis", function(object, outputs, model, dataset=NULL, settin
   if (is.null(settings)) {
     settings <- campsis::Settings()
   }
+  if (is.null(arm_index)) {
+    arm_index <- 1L
+  }
+
+  # Select specific arm
+  dataset@arms@list <- dataset@arms@list[arm_index]
+
+  # Number of subjects in arm must be one
+  dataset <- dataset %>%
+    campsis::set_subjects(1)
+
   standardGeneric("run_analysis")
 })
 
@@ -91,7 +104,19 @@ setGeneric("get_label", function(object, ...) {
 #' @return ggplot
 #' @export
 #' @rdname get_forest_plot
-get_forest_plot <- function(object, index, relative, show_caption, show_labels, show_ref, show_range, range, ci, limits, ...) {
+get_forest_plot <- function(
+  object,
+  index,
+  relative,
+  show_caption,
+  show_labels,
+  show_ref,
+  show_range,
+  range,
+  ci,
+  limits,
+  ...
+) {
   no_default_function_provided_debug(mget(names(formals()), envir = environment()), "get_forest_plot")
 }
 

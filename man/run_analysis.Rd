@@ -2,21 +2,37 @@
 % Please edit documentation in R/generic.R, R/oat_analysis.R
 \name{run_analysis}
 \alias{run_analysis}
-\alias{run_analysis,oat_analysis,ANY,campsis_model,dataset,simulation_settings-method}
-\title{Run OAT analysis.}
+\alias{run_analysis,oat_analysis,ANY,campsis_model,dataset,integer,simulation_settings-method}
+\title{Run a forest plot or sensitivity analysis.}
 \usage{
-run_analysis(object, outputs, model, dataset = NULL, settings = NULL)
+run_analysis(
+  object,
+  outputs,
+  model,
+  dataset = NULL,
+  arm_index = NULL,
+  settings = NULL
+)
 
-\S4method{run_analysis}{oat_analysis,ANY,campsis_model,dataset,simulation_settings}(object, outputs, model, dataset = NULL, settings = NULL)
+\S4method{run_analysis}{oat_analysis,ANY,campsis_model,dataset,integer,simulation_settings}(
+  object,
+  outputs,
+  model,
+  dataset = NULL,
+  arm_index = NULL,
+  settings = NULL
+)
 }
 \arguments{
-\item{object}{OAT analysis}
+\item{object}{OAT analysis, a forest plot or a sensitivity analysis to execute.}
 
-\item{outputs}{outputs, character vector or nca_analysis object}
+\item{outputs}{outputs, character vector with the model parameters to look (e.g. 'CL') at or a NCA analysis}
 
 \item{model}{Campsis model}
 
 \item{dataset}{Campsis dataset}
+
+\item{arm_index}{arm index, default is 1L (the first arm). Allows to select a specific arm from the dataset.}
 
 \item{settings}{Campsis settings}
 }
@@ -24,5 +40,5 @@ run_analysis(object, outputs, model, dataset = NULL, settings = NULL)
 OAT analysis including the results
 }
 \description{
-Run OAT analysis.
+Run a forest plot or sensitivity analysis.
 }
