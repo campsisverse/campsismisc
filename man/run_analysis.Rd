@@ -26,11 +26,13 @@ run_analysis(
 \arguments{
 \item{object}{OAT analysis, a forest plot or a sensitivity analysis to execute.}
 
-\item{outputs}{outputs, character vector with the model parameters to look (e.g. 'CL') at or a NCA analysis}
+\item{outputs}{outputs, character vector with the model parameters to look at (e.g. 'CL') or a NCA analysis}
 
 \item{model}{Campsis model}
 
-\item{dataset}{Campsis dataset}
+\item{dataset}{Campsis dataset.
+For sensitivity analyses: treatment, observations and covariates are reused (covariates must be fixed).
+For forest plots: treatment and observations are reused (covariates are automatically excluded).}
 
 \item{arm_index}{arm index, default is 1L (the first arm). Allows to select a specific arm from the dataset.}
 

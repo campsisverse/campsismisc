@@ -31,9 +31,11 @@ no_default_function_provided_debug <- function(args_list, fun_name) {
 #' Run a forest plot or sensitivity analysis.
 #'
 #' @param object OAT analysis, a forest plot or a sensitivity analysis to execute.
-#' @param outputs outputs, character vector with the model parameters to look (e.g. 'CL') at or a NCA analysis
+#' @param outputs outputs, character vector with the model parameters to look at (e.g. 'CL') or a NCA analysis
 #' @param model Campsis model
-#' @param dataset Campsis dataset
+#' @param dataset Campsis dataset.
+#' For sensitivity analyses: treatment, observations and covariates are reused (covariates must be fixed).
+#' For forest plots: treatment and observations are reused (covariates are automatically excluded).
 #' @param arm_index arm index, default is 1L (the first arm). Allows to select a specific arm from the dataset.
 #' @param settings Campsis settings
 #' @return OAT analysis including the results
@@ -60,7 +62,7 @@ setGeneric("run_analysis", function(object, outputs, model, dataset = NULL, arm_
   dataset@arms@list <- dataset@arms@list[arm_index]
 
   # Number of subjects in arm must be one
-  dataset <- dataset %>%
+  dataset <- dataset |>
     campsis::set_subjects(1)
 
   standardGeneric("run_analysis")
