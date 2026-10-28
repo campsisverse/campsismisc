@@ -49,8 +49,6 @@ Suggests:
     testthat,
     tibble,
     tictoc
-Remotes:
-    campsisverse/campsismod@develop
 Encoding: UTF-8
 Language: en-US
 LazyData: true
@@ -69,4 +67,4 @@ Collate:
     'sensitivity_analysis_item.R'
     'sensitivity_analysis_items.R'
     'sensitivity_analysis.R'
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1
