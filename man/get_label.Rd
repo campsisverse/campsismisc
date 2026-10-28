@@ -9,18 +9,16 @@
 \usage{
 get_label(object, ...)
 
-\S4method{get_label}{forest_plot_item}(object, labeled_covariates)
+\S4method{get_label}{forest_plot_item}(object, model)
 
-\S4method{get_label}{sensitivity_analysis_item}(object, labeled_parameters)
+\S4method{get_label}{sensitivity_analysis_item}(object, model)
 }
 \arguments{
 \item{object}{generic object}
 
 \item{...}{extra arguments}
 
-\item{labeled_covariates}{labeled covariates object}
-
-\item{labeled_parameters}{labeled parameters object}
+\item{model}{Campsis model}
 }
 \value{
 a label

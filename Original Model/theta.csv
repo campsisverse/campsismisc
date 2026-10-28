@@ -1,8 +1,8 @@
-"name","index","value","fix"
-"DUR",1,0.405465,FALSE
-"VC",2,4.38203,FALSE
-"VP",3,5.29832,FALSE
-"Q",4,1.38629,FALSE
-"CL",5,1.60944,FALSE
-"PROP_RUV",6,-1.89712,FALSE
-"METAB_CL",7,0.285178942233662,FALSE
+"name","index","value","fix","label","unit"
+"DUR",1,0.405465,FALSE,"Duration","h"
+"VC",2,4.38203,FALSE,"Central volume","L"
+"VP",3,5.29832,FALSE,"Peripheral volume","L"
+"Q",4,1.38629,FALSE,"Inter-compartmental\nclearance","L/h"
+"CL",5,1.60944,FALSE,"Clearance","L/h"
+"PROP_RUV",6,-1.89712,FALSE,"Proportional error",NA
+"METAB_CL",7,0.285178942233662,FALSE,"Metabolism effect",NA

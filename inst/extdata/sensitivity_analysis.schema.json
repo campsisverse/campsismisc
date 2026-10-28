@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://calvagone.github.io/campsis.doc/schema/1.0/sensitivity_analysis.schema.json",
+  "$comment": "Sensitivity analysis JSON Schema v1.0 \u00a9 2026 [Nicolas Luyckx / Calvagone]. Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). You are free to share and adapt this schema with attribution.",
+  "title": "Sensitivity Analysis JSON Schema",
+  "$ref": "#/$defs/sensitivity_analysis",
+  "$defs": {
+    "sensitivity_analysis": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sensitivity_analysis_item"
+          },
+          "description": "List of sensitivity analysis items. Each item represents one or more parameters that will be varied."
+        }
+      },
+      "required": [
+        "items"
+      ]
+    },
+    "sensitivity_analysis_item": {
+      "type": "object",
+      "properties": {
+        "changes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/change"
+          },
+          "description": "List of changes associated with this sensitivity analysis item."
+        }
+      },
+      "required": [
+        "changes"
+      ]
+    },
+    "change": {
+      "type": "object",
+      "properties": {
+        "parameter": {
+          "type": "string",
+          "description": "Name of the parameter (theta) or equation to be varied."
+        },
+        "up": {
+          "type": "number",
+          "description": "Value used for the 'up' direction. Multiplier if up_down_as_factor is true, absolute value otherwise."
+        },
+        "down": {
+          "type": "number",
+          "description": "Value used for the 'down' direction. Divider if up_down_as_factor is true, absolute value otherwise."
+        },
+        "up_down_as_factor": {
+          "type": "boolean",
+          "description": "If true (default), up and down values are treated as factor/multiplier/divider. If false, they are treated as absolute values."
+        },
+        "where": {
+          "type": "string",
+          "enum": [
+            "theta",
+            "equation"
+          ],
+          "description": "Where to apply the change: 'theta' for model parameters or 'equation' for model code/equations."
+        },
+        "log": {
+          "type": "boolean",
+          "description": "Only used when where='theta'. If true, specifies that the theta is in log scale and the change should be applied in linear scale then back-transformed."
+        }
+      },
+      "required": [
+        "parameter",
+        "up",
+        "down"
+      ]
+    }
+  }
+}

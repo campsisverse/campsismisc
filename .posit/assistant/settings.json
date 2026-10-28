@@ -1,0 +1,20 @@
+{
+  "permission": {
+    "edit": {
+      "*.md": "allow",
+      "*.R": "allow",
+      "*.Rmd": "allow",
+      "*.json": "allow",
+      "*/DESCRIPTION": "allow",
+      "*/NAMESPACE": "allow"
+    },
+    "bash": {
+      "Rscript *": "allow",
+      "air *": "allow",
+      "mkdir *": "allow"
+    },
+    "executeCode": {
+      "*": "allow"
+    }
+  }
+}

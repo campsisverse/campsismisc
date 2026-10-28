@@ -4,59 +4,27 @@
 
 #' Sensitivity analysis class.
 #'
-#' @importFrom campsis Dataset
 #' @export
 setClass(
   "sensitivity_analysis",
   representation(
-    items = "sensitivity_analysis_items",
-    labeled_parameters = "labeled_parameters"
+    items = "sensitivity_analysis_items"
   ),
-  contains = "oat_analysis",
-  prototype = prototype(model = CampsisModel(), dataset = campsis::Dataset())
+  contains = "oat_analysis"
 )
 
 #' Create an OAT-based sensitivity analysis object.
 #'
-#' @param model CAMPSIS model
-#' @param outputs outputs of interest, e.g. 'CL' or a PK metric from campsisnca or a list of them
-#' @param dataset CAMPSIS dataset, if NULL, minimalist dataset with 1 subject
-#' and single observation at time 0 is created
-#' @param replicates number of replicates, default is 1
-#' @param seed simulation seed, default is 1
-#' @param dest destination engine: rxode2, RxODE or mrgsolve (default)
-#' @param settings simulation settings
-#' @return an empty OAT-based sensibility analysis object
+#' @param json path to JSON sensitivity analysis file or JSON content in string form
+#' @return an OAT-based sensibility analysis object
 #' @importFrom campsis Dataset Observations Settings
 #' @export
-SensitivityAnalysis <- function(
-  model,
-  outputs,
-  dataset = NULL,
-  replicates = 1L,
-  seed = 1L,
-  dest = "mrgsolve",
-  settings = campsis::Settings()
-) {
-  if (is.null(dataset)) {
-    dataset <- campsis::Dataset(1) %>%
-      add(campsis::Observations(times = 0))
+SensitivityAnalysis <- function(json = NULL) {
+  if (is.null(json)) {
+    return(new("sensitivity_analysis"))
+  } else {
+    return(load_from_json(new("sensitivity_analysis"), json = json))
   }
-  if (is(outputs, "oat_analysis_output")) {
-    # Add single output into multiple outputs object
-    outputs <- OATOutputs() %>%
-      add(outputs)
-  }
-  return(new(
-    "sensitivity_analysis",
-    model = model,
-    dataset = dataset,
-    outputs = outputs,
-    replicates = as.integer(replicates),
-    seed = as.integer(seed),
-    dest = dest,
-    settings = settings
-  ))
 }
 
 #_______________________________________________________________________________
@@ -64,12 +32,7 @@ SensitivityAnalysis <- function(
 #_______________________________________________________________________________
 
 setMethod("add", signature = c("sensitivity_analysis", "sensitivity_analysis_item"), definition = function(object, x) {
-  object@items <- object@items %>% add(x)
-  return(object)
-})
-
-setMethod("add", signature = c("sensitivity_analysis", "labeled_parameters"), definition = function(object, x) {
-  object@labeled_parameters <- x
+  object@items <- object@items |> add(x)
   return(object)
 })
 
@@ -79,79 +42,104 @@ setMethod("add", signature = c("sensitivity_analysis", "labeled_parameters"), de
 
 #' @rdname create_scenarios
 #' @param model Campsis model
-setMethod("create_scenarios", signature = c("sensitivity_analysis"), definition = function(object, model, ...) {
-  # Note, IIV, VARCOV_OMEGA, VARCOV_SIGMA was already disabled in the given model, see oat_analysis.R, prepare()
-  # Because simulations are not replicated, variance-covariance matrix is not used by default in CAMPSIS
-  # If sensitivity analysis is replicated: nothing happens because the updated model is part of the scenario
-  scenarios <- campsis::Scenarios()
-  items <- object@items
+#' @importFrom campsis Scenarios Scenario
+setMethod(
+  "create_scenarios",
+  signature = c("sensitivity_analysis", "campsis_model", "dataset"),
+  definition = function(object, model, dataset) {
+    # Note, IIV, VARCOV_OMEGA, VARCOV_SIGMA was already disabled in the given model, see oat_analysis.R, run_analysis()
+    # Because simulations are not replicated, variance-covariance matrix is not used by default in CAMPSIS
+    # If sensitivity analysis is replicated: nothing happens because the updated model is part of the scenario
+    scenarios <- campsis::Scenarios()
+    items <- object@items
 
-  for (item in items@list) {
-    changes <- item@changes
-    modelUp <- model # First direction of tornado plot (direction up)
-    modelDown <- model # Other direction of tornado plot (direction down)
+    for (item in items@list) {
+      changes <- item@changes
+      modelUp <- model # First direction of tornado plot (direction up)
+      modelDown <- model # Other direction of tornado plot (direction down)
 
-    for (change in changes@list) {
-      name <- change %>% get_name()
-      where <- change@where
+      for (change in changes@list) {
+        name <- change |> get_name()
+        where <- change@where
 
-      if (where == "equation") {
-        equation <- model %>% find(Equation(name))
-        if (is.null(equation)) {
-          stop(paste0("Equation ", name, " cannot be found in model"))
-        }
-        equationUp <- equation
-        equationDown <- equation
-        if (change@up_down_as_factor) {
-          equationUp@rhs <- paste0("(", equationUp@rhs, ") * ", change@up) # Multiplication
-          equationDown@rhs <- paste0("(", equationDown@rhs, ") / ", change@down) # Division
-        } else {
-          # Use values as is
-          equationUp@rhs <- change@up %>% as.character()
-          equationDown@rhs <- change@down %>% as.character()
-        }
-
-        modelUp <- modelUp %>% campsismod::replace(equationUp)
-        modelDown <- modelDown %>% campsismod::replace(equationDown)
-      } else if (where == "theta") {
-        theta <- model %>% find(Theta(name))
-        if (is.null(theta)) {
-          stop(paste0("Theta ", name, " cannot be found in model"))
-        }
-        thetaUp <- theta
-        thetaDown <- theta
-        if (change@up_down_as_factor) {
-          if (change@log) {
-            thetaUp@value <- log(exp(theta@value) * change@up) # Multiplication
-            thetaDown@value <- log(exp(theta@value) / change@down) # Division
-          } else {
-            thetaUp@value <- theta@value * change@up # Multiplication
-            thetaDown@value <- theta@value / change@down # Division
+        if (where == "equation") {
+          equation <- model |> find(Equation(name))
+          if (is.null(equation)) {
+            stop(paste0("Equation ", name, " cannot be found in model"))
           }
-        } else {
-          # Use values as is
-          if (change@log) {
-            # Arbitrary but more convenient for the user to provide boundaries in the linear scale
-            thetaUp@value <- log(change@up)
-            thetaDown@value <- log(change@down)
+          equationUp <- equation
+          equationDown <- equation
+          if (change@up_down_as_factor) {
+            equationUp@rhs <- paste0("(", equationUp@rhs, ") * ", change@up) # Multiplication
+            equationDown@rhs <- paste0("(", equationDown@rhs, ") / ", change@down) # Division
           } else {
-            thetaUp@value <- change@up
-            thetaDown@value <- change@down
+            # Use values as is
+            equationUp@rhs <- change@up |> as.character()
+            equationDown@rhs <- change@down |> as.character()
           }
-        }
 
-        modelUp <- modelUp %>% campsismod::replace(thetaUp)
-        modelDown <- modelDown %>% campsismod::replace(thetaDown)
-      } else {
-        # Should not happen
-        stop(paste0("Unknown where argument: ", where))
+          modelUp <- modelUp |> campsismod::replace(equationUp)
+          modelDown <- modelDown |> campsismod::replace(equationDown)
+        } else if (where == "theta") {
+          theta <- model |> find(Theta(name))
+          if (is.null(theta)) {
+            stop(paste0("Theta ", name, " cannot be found in model"))
+          }
+          thetaUp <- theta
+          thetaDown <- theta
+          if (change@up_down_as_factor) {
+            if (change@log) {
+              thetaUp@value <- log(exp(theta@value) * change@up) # Multiplication
+              thetaDown@value <- log(exp(theta@value) / change@down) # Division
+            } else {
+              thetaUp@value <- theta@value * change@up # Multiplication
+              thetaDown@value <- theta@value / change@down # Division
+            }
+          } else {
+            # Use values as is
+            if (change@log) {
+              # Arbitrary but more convenient for the user to provide boundaries in the linear scale
+              thetaUp@value <- log(change@up)
+              thetaDown@value <- log(change@down)
+            } else {
+              thetaUp@value <- change@up
+              thetaDown@value <- change@down
+            }
+          }
+
+          modelUp <- modelUp |> campsismod::replace(thetaUp)
+          modelDown <- modelDown |> campsismod::replace(thetaDown)
+        } else {
+          # Should not happen
+          stop(paste0("Unknown where argument: ", where))
+        }
       }
+      scenarios <- scenarios |>
+        add(campsis::Scenario(name = paste0(item |> get_name(), ", up"), model = modelUp)) |>
+        add(campsis::Scenario(name = paste0(item |> get_name(), ", down"), model = modelDown))
     }
-    scenarios <- scenarios %>%
-      add(campsis::Scenario(name = paste0(item %>% get_name(), ", up"), model = modelUp)) %>%
-      add(campsis::Scenario(name = paste0(item %>% get_name(), ", down"), model = modelDown))
+    return(scenarios)
   }
-  return(scenarios)
+)
+
+#_______________________________________________________________________________
+#----                          load_from_json                               ----
+#_______________________________________________________________________________
+
+setMethod("load_from_json", signature = c("sensitivity_analysis", "json_element"), definition = function(object, json) {
+  object@items@list <- json@data$items |>
+    purrr::map(~ load_from_json(new("sensitivity_analysis_item"), JSONElement(.x)))
+  return(object)
+})
+
+setMethod("load_from_json", signature = c("sensitivity_analysis", "character"), definition = function(object, json) {
+  schema <- system.file("extdata", "sensitivity_analysis.schema.json", package = "campsismisc")
+  return(load_from_json(object = object, json = open_json(json = json, schema = schema)))
+})
+
+setMethod("load_from_json", signature = c("sensitivity_analysis", "list"), definition = function(object, json) {
+  schema <- system.file("extdata", "sensitivity_analysis.schema.json", package = "campsismisc")
+  return(load_from_json(object = object, json = open_json(json = json, schema = schema)))
 })
 
 #_______________________________________________________________________________
@@ -164,6 +152,10 @@ setMethod("create_scenarios", signature = c("sensitivity_analysis"), definition 
 #' @param label_nsig number of significant digits in label
 #' @param geom_hline_color color argument of method geom_hline
 #' @param geom_text_size size argument of method geom_text
+#' @importFrom ggrepel geom_text_repel
+#' @importFrom tidyr separate
+#' @importFrom dplyr mutate group_by across summarise arrange ungroup pull
+#' @importFrom ggplot2 ggplot aes coord_flip geom_bar xlab labs geom_hline ylab scale_y_continuous
 setMethod(
   "get_tornado_plot",
   signature = c("sensitivity_analysis", "integer", "logical", "logical", "logical", "numeric"),
@@ -181,11 +173,10 @@ setMethod(
     geom_text_size = 3,
     ...
   ) {
-    isSensitivityAnalysis <- is(object, "sensitivity_analysis")
-    iResults <- object@results@list[[index]]
-    output <- iResults@output
-    results <- iResults@results
-    baseline <- iResults@baseline
+    is_sensitivity_analysis <- is(object, "sensitivity_analysis")
+    output <- object@transient_outputs@metrics@list[[index]]
+    results <- object@transient_results |> dplyr::filter(.data$output_index == index)
+    baseline <- results$baseline[1]
 
     # Check limits argument
     if (any(is.na(limits))) {
@@ -193,15 +184,14 @@ setMethod(
     }
 
     # Tornado plots are bidirectional, forest plots aren't
-    if (isSensitivityAnalysis) {
-      results <- results %>%
+    if (is_sensitivity_analysis) {
+      results <- results |>
         tidyr::separate(col = "SCENARIO", sep = ", ", into = c("ITEM_NAME", "DIRECTION"))
     } else {
-      results <- results %>%
+      results <- results |>
         dplyr::mutate(ITEM_NAME = .data$SCENARIO, DIRECTION = "up")
     }
 
-    noOfScenarios <- object@items %>% length()
     formula <- preprocess_function(fun = ~ (.x - .y) * 100 / .y, name = "tornado_plot_fct")
 
     if ("replicate" %in% colnames(results)) {
@@ -211,26 +201,26 @@ setMethod(
     # Always compute change from baseline because arrange will always called on the absolute change
     results$CHANGE <- formula(results$value, baseline)
 
-    summary <- results %>%
-      dplyr::group_by(dplyr::across(c("ITEM_NAME", "DIRECTION"))) %>%
-      dplyr::summarise(MED_CHANGE = median(.data$CHANGE), MED_VALUE = median(.data$value)) %>% # If several replicates
-      dplyr::group_by(dplyr::across("ITEM_NAME")) %>%
-      dplyr::mutate(MAX_MED_CHANGE = max(abs(.data$MED_CHANGE))) %>%
-      dplyr::arrange(abs(.data$MAX_MED_CHANGE)) %>%
-      dplyr::ungroup() %>%
+    summary <- results |>
+      dplyr::group_by(dplyr::across(c("ITEM_NAME", "DIRECTION"))) |>
+      dplyr::summarise(MED_CHANGE = median(.data$CHANGE), MED_VALUE = median(.data$value)) |> # If several replicates
+      dplyr::group_by(dplyr::across("ITEM_NAME")) |>
+      dplyr::mutate(MAX_MED_CHANGE = max(abs(.data$MED_CHANGE))) |>
+      dplyr::arrange(abs(.data$MAX_MED_CHANGE)) |>
+      dplyr::ungroup() |>
       dplyr::mutate(DIRECTION = factor(.data$DIRECTION, levels = c("up", "down"), labels = c("Up", "Down")))
 
     # Customize item name if sensitivity analysis object
-    if (isSensitivityAnalysis) {
-      itemNames <- object@items %>% get_names()
-      itemLabels <- object@items@list %>% purrr::map_chr(~ .x %>% get_label(object@labeled_parameters))
-      order <- order(match(itemNames, unique(summary$ITEM_NAME)))
-      itemNames <- itemNames[order]
-      itemLabels <- itemLabels[order]
-      summary <- summary %>%
-        dplyr::mutate(ITEM_NAME = factor(.data$ITEM_NAME, levels = itemNames, labels = itemLabels))
+    if (is_sensitivity_analysis) {
+      item_names <- object@items |> get_names()
+      item_labels <- object@items@list |> purrr::map_chr(\(x) x |> get_label(object@transient_model))
+      order <- order(match(item_names, unique(summary$ITEM_NAME)))
+      item_names <- item_names[order]
+      item_labels <- item_labels[order]
+      summary <- summary |>
+        dplyr::mutate(ITEM_NAME = factor(.data$ITEM_NAME, levels = item_names, labels = item_labels))
     } else {
-      summary <- summary %>%
+      summary <- summary |>
         dplyr::mutate(ITEM_NAME = factor(.data$ITEM_NAME, levels = unique(.data$ITEM_NAME)))
     }
 
@@ -242,7 +232,7 @@ setMethod(
     }
 
     # Relative or absolute
-    summary <- summary %>%
+    summary <- summary |>
       dplyr::mutate(
         TORNADO_VALUE = if (relative) {
           .data$MED_CHANGE
@@ -252,11 +242,11 @@ setMethod(
       )
 
     # Label
-    summary$LABEL <- paste0(signif(summary %>% dplyr::pull(TORNADO_VALUE), digits = label_nsig))
+    summary$LABEL <- paste0(signif(summary |> dplyr::pull(.data$TORNADO_VALUE), digits = label_nsig))
 
     plot <- ggplot2::ggplot(
       data = summary,
-      mapping = ggplot2::aes(x = ITEM_NAME, y = TORNADO_VALUE, fill = DIRECTION, label = LABEL)
+      mapping = ggplot2::aes(x = .data$ITEM_NAME, y = .data$TORNADO_VALUE, fill = .data$DIRECTION, label = .data$LABEL)
     ) +
       ggplot2::coord_flip(ylim = limits) +
       ggplot2::geom_bar(stat = "identity", position = "identity", width = geom_bar_width)
@@ -276,11 +266,11 @@ setMethod(
 
     if (relative) {
       plot <- plot +
-        ggplot2::ylab(paste0("Change in ", output %>% get_name(), " (%)"))
+        ggplot2::ylab(paste0("Change in ", output |> get_name(), " (%)"))
     } else {
       plot <- plot +
         ggplot2::scale_y_continuous(trans = shift_trans(baseline)) +
-        ggplot2::ylab(paste0(output %>% get_name()))
+        ggplot2::ylab(paste0(output |> get_name()))
     }
 
     return(plot)

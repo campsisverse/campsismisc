@@ -25,21 +25,49 @@ no_default_function_provided_debug <- function(args_list, fun_name) {
 }
 
 #_______________________________________________________________________________
-#----                              prepare                                  ----
+#----                              run_analysis                             ----
 #_______________________________________________________________________________
 
-#' Prepare.
+#' Run a forest plot or sensitivity analysis.
 #'
-#' @param object generic object
-#' @return same object
+#' @param object OAT analysis, a forest plot or a sensitivity analysis to execute.
+#' @param outputs outputs, character vector with the model parameters to look at (e.g. 'CL') or a NCA analysis
+#' @param model Campsis model
+#' @param dataset Campsis dataset.
+#' For sensitivity analyses: treatment, observations and covariates are reused (covariates must be fixed).
+#' For forest plots: treatment and observations are reused (covariates are automatically excluded).
+#' @param arm_index arm index, default is 1L (the first arm). Allows to select a specific arm from the dataset.
+#' @param settings Campsis settings
+#' @return OAT analysis including the results
 #' @export
-#' @rdname prepare
-prepare <- function(object) {
+#' @rdname run_analysis
+run_analysis <- function(object, outputs, model, dataset, arm_index, settings) {
   stop("No default function is provided")
 }
 
-setGeneric("prepare", function(object) {
-  standardGeneric("prepare")
+# @importFrom campsis Observations Settings set_subjects
+setGeneric("run_analysis", function(object, outputs, model, dataset = NULL, arm_index = NULL, settings = NULL) {
+  if (is.null(dataset)) {
+    dataset <- campsis::Dataset(1) |>
+      add(campsis::Observations(times = 0))
+  }
+  if (is.null(settings)) {
+    settings <- campsis::Settings()
+  }
+  if (is.null(arm_index)) {
+    arm_index <- 1L
+  } else {
+    arm_index <- as.integer(arm_index)
+  }
+
+  # Select specific arm
+  dataset@arms@list <- dataset@arms@list[arm_index]
+
+  # Number of subjects in arm must be one
+  dataset <- dataset |>
+    campsis::set_subjects(1)
+
+  standardGeneric("run_analysis")
 })
 
 #_______________________________________________________________________________
@@ -69,6 +97,7 @@ setGeneric("get_label", function(object, ...) {
 #' @param object generic object
 #' @param index output number, 1 by default
 #' @param relative relative change or absolute value, logical
+#' @param show_caption show caption about reference subject and CI percentage
 #' @param show_labels show the numeric labels
 #' @param show_ref show vertical reference (at 1 or at the baseline)
 #' @param show_range show vertical dashed lines, logical
@@ -79,7 +108,19 @@ setGeneric("get_label", function(object, ...) {
 #' @return ggplot
 #' @export
 #' @rdname get_forest_plot
-get_forest_plot <- function(object, index, relative, show_labels, show_ref, show_range, range, ci, limits, ...) {
+get_forest_plot <- function(
+  object,
+  index,
+  relative,
+  show_caption,
+  show_labels,
+  show_ref,
+  show_range,
+  range,
+  ci,
+  limits,
+  ...
+) {
   no_default_function_provided_debug(mget(names(formals()), envir = environment()), "get_forest_plot")
 }
 
@@ -89,6 +130,7 @@ setGeneric(
     object,
     index = NULL,
     relative = NULL,
+    show_caption = NULL,
     show_labels = NULL,
     show_ref = NULL,
     show_range = NULL,
@@ -104,6 +146,9 @@ setGeneric(
     }
     if (is.null(relative)) {
       relative <- TRUE
+    }
+    if (is.null(show_caption)) {
+      show_caption <- TRUE
     }
     if (is.null(show_labels)) {
       show_labels <- TRUE

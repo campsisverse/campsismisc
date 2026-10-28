@@ -11,3 +11,5 @@
 ^air\.toml$
 ^cran-comments\.md$
 ^\.vscode$
+^\.posit$
+^README_files$

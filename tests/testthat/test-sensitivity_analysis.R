@@ -7,8 +7,8 @@ context("Test the sensitivity analysis feature")
 source(file.path(getwd(), test_path(), "test-utils.R"))
 
 test_that("Sensitivity analysis: effect of DUR, VC, VP, Q, CL on AUC (several replicates)", {
-  model <- getModel("metaboliser_effect_on_cl")
-  regFilename <- "effect_of_parameters_on_auc"
+  model <- get_model("metaboliser_effect_on_cl")
+  reg_filename <- "effect_of_parameters_on_auc"
 
   dataset <- Dataset(1) %>%
     add(Infusion(time = 0, amount = 1000, compartment = 1)) %>%
@@ -19,12 +19,8 @@ test_that("Sensitivity analysis: effect of DUR, VC, VP, Q, CL on AUC (several re
   results <- simulate(model = model %>% disable("IIV"), dataset = dataset)
   spaghettiPlot(results, "CONC")
 
-  object <- SensitivityAnalysis(
-    model = model,
-    dataset = dataset,
-    outputs = NcaMetricOutput(AUC(variable = "CONC")),
-    replicates = 3
-  ) %>%
+  outputs <- AUC(variable = "CONC")
+  object <- SensitivityAnalysis() %>%
     add(SensitivityAnalysisItem(Change("DUR", up = 2, down = 2, log = TRUE))) %>%
     add(SensitivityAnalysisItem(Change("VC", up = 2, down = 2, log = TRUE))) %>%
     add(SensitivityAnalysisItem(Change("VP", up = 2, down = 2, log = TRUE))) %>%
@@ -34,22 +30,25 @@ test_that("Sensitivity analysis: effect of DUR, VC, VP, Q, CL on AUC (several re
   expect_equal(object@items %>% get_names(), c("DUR", "VC", "VP", "Q", "CL"))
 
   simulation <- expression(
-    object@dest <- destEngine,
-    object <- progressr::with_progress(object %>% prepare())
+    settings <- Settings(
+      Hardware(cpu = 1, replicate_parallel = FALSE),
+      DefaultSettings(replicates = 3, engine = destEngine, seed = 1)
+    ),
+    object <- progressr::with_progress(object %>% run_analysis(outputs = outputs, model = model, dataset = dataset, settings = settings))
   )
 
   test <- expression(
-    oatAnalysisRegressionTest(object = object, filename = regFilename),
+    oat_analysis_regression_test(object = object, filename = reg_filename),
     expect_warning(object %>% get_tornado_plot(), regexp = "Multiple replicates detected")
     # class(object) <- "forest_plot",
     # object %>% get_forest_plot(relative=FALSE)
   )
-  campsismiscTest(simulation, test, env = environment())
+  campsismisc_test(simulation, test, env = environment())
 })
 
 test_that("Sensitivity analysis: effect of DUR, VC, VP, Q, CL on AUC (single replicate)", {
-  model <- getModel("metaboliser_effect_on_cl")
-  regFilename <- "effect_of_parameters_on_auc_1rep"
+  model <- get_model("metaboliser_effect_on_cl")
+  reg_filename <- "effect_of_parameters_on_auc_1rep"
 
   dataset <- Dataset(1) %>%
     add(Infusion(time = 0, amount = 1000, compartment = 1)) %>%
@@ -60,14 +59,8 @@ test_that("Sensitivity analysis: effect of DUR, VC, VP, Q, CL on AUC (single rep
   results <- simulate(model = model %>% disable("IIV"), dataset = dataset)
   spaghettiPlot(results, "CONC")
 
-  object <- SensitivityAnalysis(model = model, dataset = dataset, outputs = NcaMetricOutput(AUC(variable = "CONC"))) %>%
-    add(LabeledParameters(c(
-      DUR = "Duration",
-      VC = "Central volume",
-      VP = "Peripheral volume",
-      Q = "Inter-compartmental clearance",
-      CL = "Clearance"
-    ))) %>%
+  outputs <- AUC(variable = "CONC")
+  object <- SensitivityAnalysis() %>%
     add(SensitivityAnalysisItem(Change("DUR", up = 2, down = 2, log = TRUE))) %>%
     add(SensitivityAnalysisItem(Change("VC", up = 2, down = 2, log = TRUE))) %>%
     add(SensitivityAnalysisItem(Change("VP", up = 2, down = 2, log = TRUE))) %>%
@@ -77,47 +70,38 @@ test_that("Sensitivity analysis: effect of DUR, VC, VP, Q, CL on AUC (single rep
   expect_equal(object@items %>% get_names(), c("DUR", "VC", "VP", "Q", "CL"))
 
   simulation <- expression(
-    object@dest <- destEngine,
-    object <- progressr::with_progress(object %>% prepare())
+    settings <- Settings(
+      Hardware(cpu = 1, replicate_parallel = FALSE),
+      DefaultSettings(replicates = 1, engine = destEngine, seed = 1)
+    ),
+    object <- progressr::with_progress(object %>% run_analysis(outputs = outputs, model = model, dataset = dataset, settings = settings))
   )
 
   test <- expression(
-    oatAnalysisRegressionTest(object = object, filename = regFilename),
+    oat_analysis_regression_test(object = object, filename = reg_filename),
     object %>% get_tornado_plot(relative = TRUE),
-    object %>% get_tornado_plot(relative = FALSE),
-    suppressWarnings(object %>% getTornadoPlot(relative = FALSE)) # Testing the deprecated method
+    object %>% get_tornado_plot(relative = FALSE)
     # class(object) <- "forest_plot",
     # object %>% get_forest_plot(relative=FALSE),
   )
-  campsismiscTest(simulation, test, env = environment())
+  campsismisc_test(simulation, test, env = environment())
 })
 
 test_that("Sensitivity analysis: effect of DUR, VC, VP, Q, CL on Cmax (rxode2/mrgsolve)", {
-  model <- getModel("metaboliser_effect_on_cl")
-  regFilename <- "effect_of_parameters_on_cmax"
+  model <- get_model("metaboliser_effect_on_cl")
+  reg_filename <- "effect_of_parameters_on_cmax"
 
   dataset <- Dataset(1) %>%
     add(Infusion(time = 0, amount = 1000, compartment = 1)) %>%
     add(Observations(times = 0:24)) %>%
     add(Covariate("METAB", 0)) %>%
     add(Covariate("WT", 70))
-
+ 
   results <- simulate(model = model %>% disable("IIV"), dataset = dataset)
   spaghettiPlot(results, "CONC")
 
-  object <- SensitivityAnalysis(
-    model = model,
-    dataset = dataset,
-    outputs = NcaMetricOutput(Cmax(variable = "CONC")),
-    replicates = 3
-  ) %>%
-    add(LabeledParameters(c(
-      DUR = "Duration",
-      VC = "Central volume",
-      VP = "Peripheral volume",
-      Q = "Inter-compartmental clearance",
-      CL = "Clearance"
-    ))) %>%
+  outputs <- Cmax(variable = "CONC")
+  object <- SensitivityAnalysis() %>%
     add(SensitivityAnalysisItem(Change("DUR", up = 2, down = 2, log = TRUE))) %>%
     add(SensitivityAnalysisItem(Change("VC", up = 2, down = 2, log = TRUE))) %>%
     add(SensitivityAnalysisItem(Change("VP", up = 2, down = 2, log = TRUE))) %>%
@@ -127,22 +111,25 @@ test_that("Sensitivity analysis: effect of DUR, VC, VP, Q, CL on Cmax (rxode2/mr
   expect_equal(object@items %>% get_names(), c("DUR", "VC", "VP", "Q", "CL"))
 
   simulation <- expression(
-    object@dest <- destEngine,
-    object <- progressr::with_progress(object %>% prepare())
+    settings <- Settings(
+      Hardware(cpu = 1, replicate_parallel = FALSE),
+      DefaultSettings(replicates = 3, engine = destEngine, seed = 1)
+    ),
+    object <- progressr::with_progress(object %>% run_analysis(outputs = outputs, model = model, dataset = dataset, settings = settings))
   )
 
   test <- expression(
-    oatAnalysisRegressionTest(object = object, filename = regFilename),
+    oat_analysis_regression_test(object = object, filename = reg_filename),
     expect_warning(object %>% get_tornado_plot(), regexp = "Multiple replicates detected")
     # class(object) <- "forest_plot",
     # object %>% get_forest_plot()
   )
-  campsismiscTest(simulation, test, env = environment())
+  campsismisc_test(simulation, test, env = environment())
 })
 
 test_that("Tornado plot: sensitivity analysis of the 1-cpt-fo model parameters on AUC (rxode2/mrgsolve, change applied on THETAS)", {
   model <- model_suite$pk$'1cpt_fo'
-  regFilename <- "sensitivity_bio_ka_cl_vc_on_auc"
+  reg_filename <- "sensitivity_bio_ka_cl_vc_on_auc"
 
   arm1 <- Arm(subjects = 10, label = "Arm 1") %>%
     add(Bolus(time = 0, amount = 1000, compartment = 1, ii = 24, addl = 0)) %>%
@@ -150,18 +137,11 @@ test_that("Tornado plot: sensitivity analysis of the 1-cpt-fo model parameters o
     set_subjects(1) %>%
     set_label(as.character(NA))
 
-  outputs <- OATOutputs() %>%
-    add(NcaMetricOutput(AUC(variable = "CONC", window = TimeWindow(0, "last"), method = 1, name = "AUC")))
+  outputs <- AUC(variable = "CONC", window = TimeWindow(0, "last"), method = 1, name = "AUC")
 
   dataset_sens <- Dataset() %>% add(arm1) %>% add(DatasetConfig(exportTSLD = TRUE, exportTDOS = TRUE))
 
-  sens <- SensitivityAnalysis(model = model, dataset = dataset_sens, outputs = outputs) %>%
-    add(LabeledParameters(c(
-      BIO = "Bioavailability",
-      KA = "Absorption rate",
-      CL = "Clearance",
-      VC = "Volume of central compartment"
-    ))) %>%
+  sens <- SensitivityAnalysis() %>%
     add(SensitivityAnalysisItem(Change("BIO", up = 2, down = 2))) %>%
     add(SensitivityAnalysisItem(Change("KA", up = 2, down = 2))) %>%
     add(SensitivityAnalysisItem(Change("CL", up = 2, down = 2))) %>%
@@ -169,23 +149,26 @@ test_that("Tornado plot: sensitivity analysis of the 1-cpt-fo model parameters o
 
   simulation <- expression(
     tictoc::tic(),
-    sens@dest <- destEngine,
-    sens <- progressr::with_progress(sens %>% prepare()),
+    settings <- Settings(
+      Hardware(cpu = 1, replicate_parallel = FALSE),
+      DefaultSettings(replicates = 1, engine = destEngine, seed = 1)
+    ),
+    sens <- progressr::with_progress(sens %>% run_analysis(outputs = outputs, model = model, dataset = dataset_sens, settings = settings)),
     tictoc::toc(), # rxode2: 15.43 sec, mrgsolve: 7.19 sec
     sens
   )
 
   test <- expression(
-    oatAnalysisRegressionTest(object = sens, filename = regFilename),
+    oat_analysis_regression_test(object = sens, filename = reg_filename),
     sens %>% get_tornado_plot(), # Default plot
     sens %>% get_tornado_plot(limits = c(-15, 100), show_labels = FALSE) # Limits can be set, labels can be hidden, etc.
   )
-  campsismiscTest(simulation, test, env = environment())
+  campsismisc_test(simulation, test, env = environment())
 })
 
 test_that("Tornado plot: sensitivity analysis of the 1-cpt-fo model parameters on AUC(rxode2/mrgsolve, change applied on equations)", {
   model <- model_suite$pk$'1cpt_fo'
-  regFilename <- "sensitivity_bio_ka_cl_vc_on_auc"
+  reg_filename <- "sensitivity_bio_ka_cl_vc_on_auc"
 
   arm1 <- Arm(subjects = 10, label = "Arm 1") %>%
     add(Bolus(time = 0, amount = 1000, compartment = 1, ii = 24, addl = 0)) %>%
@@ -193,18 +176,11 @@ test_that("Tornado plot: sensitivity analysis of the 1-cpt-fo model parameters o
     set_subjects(1) %>%
     set_label(as.character(NA))
 
-  outputs <- OATOutputs() %>%
-    add(NcaMetricOutput(AUC(variable = "CONC", window = TimeWindow(0, "last"), method = 1, name = "AUC")))
+  outputs <- AUC(variable = "CONC", window = TimeWindow(0, "last"), method = 1, name = "AUC")
 
   dataset_sens <- Dataset() %>% add(arm1) %>% add(DatasetConfig(exportTSLD = TRUE, exportTDOS = TRUE))
 
-  sens <- SensitivityAnalysis(model = model, dataset = dataset_sens, outputs = outputs) %>%
-    add(LabeledParameters(c(
-      BIO = "Bioavailability",
-      KA = "Absorption rate",
-      CL = "Clearance",
-      VC = "Volume of central compartment"
-    ))) %>%
+  sens <- SensitivityAnalysis() %>%
     add(SensitivityAnalysisItem(Change("BIO", up = 2, down = 2, where = "equation"))) %>%
     add(SensitivityAnalysisItem(Change("KA", up = 2, down = 2, where = "equation"))) %>%
     add(SensitivityAnalysisItem(Change("CL", up = 2, down = 2, where = "equation"))) %>%
@@ -212,16 +188,19 @@ test_that("Tornado plot: sensitivity analysis of the 1-cpt-fo model parameters o
 
   simulation <- expression(
     tictoc::tic(),
-    sens@dest <- destEngine,
-    sens <- progressr::with_progress(sens %>% prepare()),
+    settings <- Settings(
+      Hardware(cpu = 1, replicate_parallel = FALSE),
+      DefaultSettings(replicates = 1, engine = destEngine, seed = 1)
+    ),
+    sens <- progressr::with_progress(sens %>% run_analysis(outputs = outputs, model = model, dataset = dataset_sens, settings = settings)),
     tictoc::toc(), # rxode2: 40.75 sec, mrgsolve: 35.78 sec
     sens
   )
 
   test <- expression(
-    oatAnalysisRegressionTest(object = sens, filename = regFilename),
+    oat_analysis_regression_test(object = sens, filename = reg_filename),
     sens %>% get_tornado_plot(), # Default plot
     sens %>% get_tornado_plot(limits = c(-15, 100), show_labels = FALSE) # Limits can be set, labels can be hidden, etc.
   )
-  campsismiscTest(simulation, test, env = environment())
+  campsismisc_test(simulation, test, env = environment())
 })

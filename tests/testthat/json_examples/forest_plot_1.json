@@ -1,0 +1,24 @@
+{
+  "items": [
+    {
+      "covariates": [
+        { "name": "METAB", "value": 0 }
+      ]
+    },
+    {
+      "covariates": [
+        { "name": "METAB", "value": 1 }
+      ]
+    },
+    {
+      "covariates": [
+        { "name": "WT", "value": 60 }
+      ]
+    },
+    {
+      "covariates": [
+        { "name": "WT", "value": 80 }
+      ]
+    }
+  ]
+}

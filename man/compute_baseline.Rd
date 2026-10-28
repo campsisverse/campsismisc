@@ -2,18 +2,15 @@
 % Please edit documentation in R/oat_analysis.R
 \name{compute_baseline}
 \alias{compute_baseline}
-\alias{compute_baseline,tbl_df,model_parameter_output-method}
-\alias{compute_baseline,tbl_df,nca_metric_output-method}
-\alias{compute_baseline,tbl_df,oat_analysis_outputs-method}
+\alias{compute_baseline,tbl_df,nca_metric-method}
+\alias{compute_baseline,tbl_df,nca_analysis-method}
 \title{Compute baseline.}
 \usage{
 compute_baseline(object, output)
 
-\S4method{compute_baseline}{tbl_df,model_parameter_output}(object, output)
+\S4method{compute_baseline}{tbl_df,nca_metric}(object, output)
 
-\S4method{compute_baseline}{tbl_df,nca_metric_output}(object, output)
-
-\S4method{compute_baseline}{tbl_df,oat_analysis_outputs}(object, output)
+\S4method{compute_baseline}{tbl_df,nca_analysis}(object, output)
 }
 \arguments{
 \item{object}{simulation results of the baseline, tibble}

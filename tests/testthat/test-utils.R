@@ -1,7 +1,7 @@
-overwriteNonRegressionFiles <- FALSE
-testEngines <- c("rxode2", "mrgsolve")
+OVERWRITE_NON_REG_FILES <- FALSE
+TEST_ENGINES <- c("rxode2", "mrgsolve")
 
-getModel <- function(name) {
+get_model <- function(name) {
   model <- read.campsis(file.path(getwd(), test_path(), "campsis_models", "/", name))
 
   # See strange regression in R base: #21
@@ -15,48 +15,49 @@ getModel <- function(name) {
 #' @param object OAT analysis object
 #' @param filename filename of expected results
 #' @param index output index to be checked
-#'
-oatAnalysisRegressionTest <- function(object, filename, index = 1) {
-  iResults <- object@results@list[[index]]
-  results <- iResults@results %>%
-    stripMetadata() %>%
+#' @importFrom tibble as_tibble
+oat_analysis_regression_test <- function(object, filename, index = 1) {
+  results <- object@transient_results %>%
+    dplyr::filter(.data$output_index == index) %>%
+    dplyr::select(-dplyr::any_of(c("output_index", "baseline"))) %>%
+    strip_metadata() %>%
     dplyr::mutate_if(is.factor, as.character) %>%
     dplyr::mutate_if(is.numeric, round, digits = 2)
 
   file <- file.path(getwd(), test_path(), "non_regression", "oat_analysis", paste0(filename, ".csv"))
 
-  if (overwriteNonRegressionFiles) {
+  if (OVERWRITE_NON_REG_FILES) {
     write.table(results, file = file, sep = ",", row.names = FALSE)
   }
   expected <- read.csv(file = file) %>% tibble::as_tibble()
   expect_equal(results, expected)
 }
 
-noEngineInstalled <- function() {
-  cond1 <- engineInstalled("RxODE")
-  cond2 <- engineInstalled("rxode2")
-  cond3 <- engineInstalled("mrgsolve")
+no_engine_installed <- function() {
+  cond1 <- engine_installed("RxODE")
+  cond2 <- engine_installed("rxode2")
+  cond3 <- engine_installed("mrgsolve")
   return(!(cond1 || cond2 || cond3))
 }
 
-engineInstalled <- function(name) {
+engine_installed <- function(name) {
   return(find.package(name, quiet = TRUE) %>% length() > 0)
 }
 
-campsismiscTest <- function(simulation, test, env) {
+campsismisc_test <- function(simulation, test, env) {
   # Iteration over all test engines to be tested
-  for (testEngine in testEngines) {
+  for (testEngine in TEST_ENGINES) {
     env$destEngine <- testEngine
     # Check if package exists (as test engines are suggested packages)
     # This is needed for CRAN when package is tested with `_R_CHECK_DEPENDS_ONLY_`=TRUE
-    if (engineInstalled(testEngine)) {
+    if (engine_installed(testEngine)) {
       env$results <- eval(simulation, envir = env)
       eval(test, envir = env)
     }
   }
 }
 
-convertCampsisTest <- function(env = parent.frame(), debug_engine = "mrgsolve") {
+convert_campsis_test <- function(env = parent.frame(), debug_engine = "mrgsolve") {
   if (!exists("simulation", envir = env) || !exists("test", envir = env)) {
     stop("Could not find 'simulation' or 'test' expressions in the provided environment.")
   }
@@ -78,7 +79,7 @@ convertCampsisTest <- function(env = parent.frame(), debug_engine = "mrgsolve") 
   cat(paste(final_script, collapse = "\n"))
 }
 
-stripMetadata <- function(x) {
+strip_metadata <- function(x) {
   # Revert class back to standard tibble components
   class(x) <- c("tbl_df", "tbl", "data.frame")
 

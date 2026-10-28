@@ -7,17 +7,17 @@ context("Test the forest plot feature")
 source(file.path(getwd(), test_path(), "test-utils.R"))
 
 test_that("Forest plot: effect of METAB (0/1) and WT on CL (rxode2/mrgsolve)", {
-  model <- getModel("metaboliser_effect_on_cl")
-  regFilename <- "meta_effect_cl_output"
-
-  object <- ForestPlot(model = model, outputs = ModelParameterOutput("CL"), replicates = 10) %>%
-    add(CategoricalLabeledCovariate(
+  model <- get_model("metaboliser_effect_on_cl") %>%
+    add(ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+    add(CategoricalCovariateDefinition(
       name = "METAB",
       default_value = 0,
       label = "Metaboliser",
       categories = c(Slow = 0, Fast = 1)
-    )) %>%
-    add(LabeledCovariate(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+    ))
+  reg_filename <- "meta_effect_cl_output"
+
+  object <- ForestPlot() %>%
     add(ForestPlotItem(Covariate("METAB", 0))) %>%
     add(ForestPlotItem(Covariate("METAB", 1))) %>%
     add(ForestPlotItem(Covariate("WT", 60))) %>%
@@ -26,43 +26,41 @@ test_that("Forest plot: effect of METAB (0/1) and WT on CL (rxode2/mrgsolve)", {
   expect_equal(object@items %>% get_names(), c("METAB:0", "METAB:1", "WT:60", "WT:80"))
 
   simulation <- expression(
-    object@dest <- destEngine,
-    object <- progressr::with_progress(object %>% prepare())
+    settings <- Settings(
+      Hardware(cpu = 1, replicate_parallel = FALSE),
+      DefaultSettings(replicates = 10, engine = destEngine, seed = 1)
+    ),
+    object <- progressr::with_progress(object %>% run_analysis(outputs = "CL", model = model, settings = settings))
   )
 
   test <- expression(
-    oatAnalysisRegressionTest(object = object, filename = regFilename),
+    oat_analysis_regression_test(object = object, filename = reg_filename),
     object %>% get_forest_plot(), # Default forest plot
-    object %>% get_forest_plot(limits = c(0.7, 1.5)) + ggplot2::scale_y_continuous(breaks = c(0.8, 1, 1.25)),
-    suppressWarnings(object %>% getForestPlot(limits = c(0.7, 1.5))) + ggplot2::scale_y_continuous(breaks = c(0.8, 1, 1.25)) # Deprecated method
+    object %>% get_forest_plot(limits = c(0.7, 1.5)) + ggplot2::scale_y_continuous(breaks = c(0.8, 1, 1.25))
     # class(object) <- "sensitivity_analysis",
     # # A tornado plot should work as well but a warning is thrown because it has more than 1 replicate
     # expect_warning(object %>% get_tornado_plot(), regexp="Multiple replicates detected")
   )
-  campsismiscTest(simulation, test, env = environment())
+  campsismisc_test(simulation, test, env = environment())
 })
 
 test_that("Forest plot: effect of METAB (0/1) and WT on AUC0-24 (rxode2/mrgsolve)", {
-  model <- getModel("metaboliser_effect_on_cl")
-  regFilename <- "meta_effect_auc_output"
+  model <- get_model("metaboliser_effect_on_cl") %>%
+    add(ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+    add(CategoricalCovariateDefinition(
+      name = "METAB",
+      default_value = 0,
+      label = "Metaboliser",
+      categories = c(Slow = 0, Fast = 1)
+    ))
+  reg_filename <- "meta_effect_auc_output"
 
   dataset <- Dataset(1) %>%
     add(Infusion(time = 0, amount = 1000, compartment = 1)) %>%
     add(Observations(times = 0:24))
 
-  object <- ForestPlot(
-    model = model,
-    dataset = dataset,
-    outputs = NcaMetricOutput(AUC(variable = "CONC")),
-    replicates = 10
-  ) %>%
-    add(CategoricalLabeledCovariate(
-      name = "METAB",
-      default_value = 0,
-      label = "Metaboliser",
-      categories = c(Slow = 0, Fast = 1)
-    )) %>%
-    add(LabeledCovariate(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+  outputs <- AUC(variable = "CONC")
+  object <- ForestPlot() %>%
     add(ForestPlotItem(Covariate("METAB", 0))) %>%
     add(ForestPlotItem(Covariate("METAB", 1))) %>%
     add(ForestPlotItem(Covariate("WT", 60))) %>%
@@ -71,38 +69,37 @@ test_that("Forest plot: effect of METAB (0/1) and WT on AUC0-24 (rxode2/mrgsolve
   expect_equal(object@items %>% get_names(), c("METAB:0", "METAB:1", "WT:60", "WT:80"))
 
   simulation <- expression(
-    object@dest <- destEngine,
-    object <- progressr::with_progress(object %>% prepare())
+    settings <- Settings(
+      Hardware(cpu = 1, replicate_parallel = FALSE),
+      DefaultSettings(replicates = 10, engine = destEngine, seed = 1)
+    ),
+    object <- progressr::with_progress(object %>% run_analysis(outputs = outputs, model = model, dataset = dataset, settings = settings))
   )
 
   test <- expression(
-    oatAnalysisRegressionTest(object = object, filename = regFilename),
+    oat_analysis_regression_test(object = object, filename = reg_filename),
     object %>% get_forest_plot() # Default forest plot
   )
-  campsismiscTest(simulation, test, env = environment())
+  campsismisc_test(simulation, test, env = environment())
 })
 
 test_that("Forest plot: effect of METAB (0/1) and WT on AUC144-168 (rxode2/mrgsolve)", {
-  model <- getModel("metaboliser_effect_on_cl")
-  regFilename <- "meta_effect_aucd7_output"
+  model <- get_model("metaboliser_effect_on_cl") %>%
+    add(ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+    add(CategoricalCovariateDefinition(
+      name = "METAB",
+      default_value = 0,
+      label = "Metaboliser",
+      categories = c(Slow = 0, Fast = 1)
+    ))
+  reg_filename <- "meta_effect_aucd7_output"
 
   dataset <- Dataset(1) %>%
     add(Infusion(time = 0, amount = 1000, compartment = 1, ii = 24, addl = 6)) %>%
     add(Observations(times = 0:168))
 
-  object <- ForestPlot(
-    model = model,
-    dataset = dataset,
-    outputs = NcaMetricOutput(AUC(variable = "CONC", window = TimeWindow(144, 168))),
-    replicates = 2
-  ) %>%
-    add(CategoricalLabeledCovariate(
-      name = "METAB",
-      default_value = 0,
-      label = "Metaboliser",
-      categories = c(Slow = 0, Fast = 1)
-    )) %>%
-    add(LabeledCovariate(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+  outputs <- AUC(variable = "CONC", window = TimeWindow(144, 168))
+  object <- ForestPlot() %>%
     add(ForestPlotItem(Covariate("METAB", 0))) %>%
     add(ForestPlotItem(Covariate("METAB", 1))) %>%
     add(ForestPlotItem(Covariate("WT", 60))) %>%
@@ -111,46 +108,88 @@ test_that("Forest plot: effect of METAB (0/1) and WT on AUC144-168 (rxode2/mrgso
   expect_equal(object@items %>% get_names(), c("METAB:0", "METAB:1", "WT:60", "WT:80"))
 
   simulation <- expression(
-    object@dest <- destEngine,
-    object <- progressr::with_progress(object %>% prepare())
+    settings <- Settings(
+      Hardware(cpu = 1, replicate_parallel = FALSE),
+      DefaultSettings(replicates = 2, engine = destEngine, seed = 1)
+    ),
+    object <- progressr::with_progress(object %>% run_analysis(outputs = outputs, model = model, dataset = dataset, settings = settings))
   )
 
   test <- expression(
-    oatAnalysisRegressionTest(object = object, filename = regFilename),
+    oat_analysis_regression_test(object = object, filename = reg_filename),
     object %>% get_forest_plot() # Default forest plot
   )
-  campsismiscTest(simulation, test, env = environment())
+  campsismisc_test(simulation, test, env = environment())
 })
 
 test_that("Forest plots must work when only 1 item is simulated (rxode2/mrgsolve)", {
-  model <- getModel("metaboliser_effect_on_cl")
+  model <- get_model("metaboliser_effect_on_cl") %>%
+    add(ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight")) %>%
+    add(CategoricalCovariateDefinition(
+      name = "METAB",
+      default_value = 0,
+      label = "Metaboliser",
+      categories = c(Slow = 0, Fast = 1)
+    ))
 
-  object <- ForestPlot(model = model, outputs = ModelParameterOutput("CL"), replicates = 2) %>%
-    add(CategoricalLabeledCovariate(
+  object <- ForestPlot() %>%
+    add(ForestPlotItem(Covariate("WT", 60)))
+
+  expect_equal(object@items %>% get_names(), c("WT:60"))
+
+  simulation <- expression(
+    settings <- Settings(
+      Hardware(cpu = 1, replicate_parallel = FALSE),
+      DefaultSettings(replicates = 2, engine = destEngine, seed = 1)
+    ),
+    object <- progressr::with_progress(object %>% run_analysis(outputs = "CL", model = model, settings = settings))
+  )
+
+  test <- expression(
+    results1 <- object@transient_results %>% dplyr::filter(output_index == 1),
+    expect_equal(object@transient_outputs@metrics %>% length(), 1),
+    expect_equal(results1$replicate, c(1, 2)),
+    expect_true(is.numeric(results1$value)),
+    expect_equal(as.character(results1$SCENARIO), rep("Weight: 60", 2))
+  )
+  campsismisc_test(simulation, test, env = environment())
+})
+
+test_that("Forest plot caption works as expected", {
+  # 1. Continuous and categorical covariates
+  covariates <- campsismod::CovariateDefinitions() %>%
+    campsismod::add(campsismod::ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+    campsismod::add(campsismod::CategoricalCovariateDefinition(
+      name = "METAB",
+      default_value = 0,
+      label = "Metaboliser",
+      categories = c(Slow = 0, Fast = 1)
+    ))
+
+  caption <- reference_subject_caption(covariates)
+  expect_equal(caption, "Reference subject: Weight=70kg, Metaboliser=Slow.")
+
+  # 2. Continuous covariate without unit
+  covariates <- campsismod::CovariateDefinitions() %>%
+    campsismod::add(campsismod::ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight"))
+  caption <- reference_subject_caption(covariates)
+  expect_equal(caption, "Reference subject: Weight=70.")
+
+  # 3. No covariates
+  covariates <- campsismod::CovariateDefinitions()
+  caption <- reference_subject_caption(covariates)
+  expect_equal(caption, "Reference subject: .")
+
+  # 4. Multiple mixed covariates
+  covariates <- campsismod::CovariateDefinitions() %>%
+    campsismod::add(campsismod::ContinuousCovariateDefinition(name = "WT", default_value = 70, label = "Weight", unit = "kg")) %>%
+    campsismod::add(campsismod::CategoricalCovariateDefinition(
       name = "METAB",
       default_value = 0,
       label = "Metaboliser",
       categories = c(Slow = 0, Fast = 1)
     )) %>%
-    add(LabeledCovariate(name = "WT", default_value = 70, label = "Weight")) %>% # Units have been removed
-    add(ForestPlotItem(Covariate("WT", 60)))
-
-  expect_equal(object@items %>% get_names(), c("WT:60"))
-
-  object@dest <- "mrgsolve"
-  object <- progressr::with_progress(object %>% prepare())
-
-  simulation <- expression(
-    object@dest <- destEngine,
-    object <- progressr::with_progress(object %>% prepare())
-  )
-
-  test <- expression(
-    results1 <- object@results@list[[1]]@results,
-    expect_equal(object@results %>% length(), 1),
-    expect_equal(results1$replicate, c(1, 2)),
-    expect_true(is.numeric(results1$value)),
-    expect_equal(as.character(results1$SCENARIO), rep("Weight: 60", 2))
-  )
-  campsismiscTest(simulation, test, env = environment())
+    campsismod::add(campsismod::ContinuousCovariateDefinition(name = "AGE", default_value = 40, label = "Age", unit = "y"))
+  caption <- reference_subject_caption(covariates)
+  expect_equal(caption, "Reference subject: Weight=70kg, Metaboliser=Slow, Age=40y.")
 })

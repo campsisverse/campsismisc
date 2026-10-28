@@ -4,34 +4,13 @@
 \alias{ForestPlot}
 \title{Create a forest plot.}
 \usage{
-ForestPlot(
-  model,
-  outputs,
-  dataset = NULL,
-  replicates = 100L,
-  seed = 1L,
-  dest = "mrgsolve",
-  settings = campsis::Settings()
-)
+ForestPlot(json = NULL)
 }
 \arguments{
-\item{model}{CAMPSIS model}
-
-\item{outputs}{output(s) of interest, e.g. 'CL' or a PK metric from campsisnca or a list of them}
-
-\item{dataset}{CAMPSIS dataset, if NULL, minimalist dataset with 1 subject
-and single observation at time 0 is created}
-
-\item{replicates}{number of replicates, default is 100}
-
-\item{seed}{simulation seed, default is 1}
-
-\item{dest}{destination engine: rxode2, RxODE or mrgsolve (default)}
-
-\item{settings}{simulation settings}
+\item{json}{path to JSON forest plot file or JSON content in string form}
 }
 \value{
-an empty forest plot
+a forest plot object
 }
 \description{
 Create a forest plot.

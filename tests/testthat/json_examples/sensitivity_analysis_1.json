@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "changes": [
+        { "parameter": "CL", "up": 1.2, "down": 1.2, "up_down_as_factor": true, "where": "theta", "log": false }
+      ]
+    },
+    {
+      "changes": [
+        { "parameter": "V", "up": 1.5, "down": 1.5, "up_down_as_factor": true, "where": "equation", "log": false }
+      ]
+    }
+  ]
+}

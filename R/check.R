@@ -1,5 +1,5 @@
 get_slot_length <- function(object, slot) {
-  return(get_object_slot(object, slot) %>% length())
+  return(get_object_slot(object, slot) |> length())
 }
 
 get_object_slot <- function(object, slot) {

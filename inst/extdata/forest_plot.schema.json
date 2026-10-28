@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://calvagone.github.io/campsis.doc/schema/1.0/forest_plot.schema.json",
+  "$comment": "Forest plot JSON Schema v1.0 \u00a9 2026 [Nicolas Luyckx / Calvagone]. Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). You are free to share and adapt this schema with attribution.",
+  "title": "Forest Plot JSON Schema",
+  "$ref": "#/$defs/forest_plot",
+  "$defs": {
+    "forest_plot": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/forest_plot_item"
+          },
+          "description": "List of forest plot items. Each item represents a specific scenario to be compared to the baseline."
+        }
+      },
+      "required": [
+        "items"
+      ]
+    },
+    "forest_plot_item": {
+      "type": "object",
+      "properties": {
+        "covariates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fixed_covariate"
+          },
+          "description": "List of fixed covariates for this forest plot item."
+        }
+      },
+      "required": [
+        "covariates"
+      ]
+    },
+    "fixed_covariate": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the covariate as defined in the model."
+        },
+        "value": {
+          "type": "number",
+          "description": "Fixed value for this covariate in this scenario."
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ]
+    }
+  }
+}

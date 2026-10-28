@@ -8,7 +8,7 @@ Change(
   parameter,
   up,
   down,
-  upDownAsFactor = TRUE,
+  up_down_as_factor = TRUE,
   where = "theta",
   log = FALSE
 )
@@ -17,13 +17,13 @@ Change(
 \item{parameter}{theta name (e.g. "CL") or parameter/equation name (e.g. "CL") in the model code,
 see also argument `where`.}
 
-\item{up}{model parameter will be multiplied by this value if upDownAsFactor is TRUE,
+\item{up}{model parameter will be multiplied by this value if up_down_as_factor is TRUE,
 otherwise the model parameter will take this value as is}
 
-\item{down}{model parameter will be divided by this value if upDownAsFactor is TRUE,
+\item{down}{model parameter will be divided by this value if up_down_as_factor is TRUE,
 otherwise the model parameter will take this value as is}
 
-\item{upDownAsFactor}{if TRUE, up and down are respectively used as multiplier and divider,
+\item{up_down_as_factor}{if TRUE, up and down are respectively used as multiplier and divider,
 if FALSE, their value is used as is.}
 
 \item{where}{where to apply the change, either "theta" (the corresponding theta is changed in the model parameters)

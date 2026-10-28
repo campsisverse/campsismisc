@@ -1,9 +1,12 @@
 Type: Package
 Package: campsismisc
 Title: Miscellaneous Utilities for the Campsis Ecosystem
-Version: 1.0.0
-Authors@R: 
-    person("Nicolas", "Luyckx", , "nicolas.luyckx@calvagone.com", role = c("aut", "cre"))
+Version: 1.1.0
+Authors@R: c(
+    person("Nicolas", "Luyckx", email = "nicolas.luyckx@lynxsoft.be", role = c("aut", "cre")),
+    person("Calvagone", role = "cph")
+  )
+Maintainer: Nicolas Luyckx <nicolas.luyckx@lynxsoft.be>
 Description: A collection of utilities extending the 'campsis' ecosystem,
     with a primary focus on sensitivity analysis and uncertainty
     visualization in pharmacometric workflows.  The package provides a
@@ -16,8 +19,8 @@ Description: A collection of utilities extending the 'campsis' ecosystem,
     'campsismod' and 'campsisnca', supporting efficient simulation,
     analysis and interpretation workflows.
 License: GPL (>= 3)
-URL: https://github.com/Calvagone/campsismisc
-BugReports: https://github.com/Calvagone/campsismisc/issues
+URL: https://github.com/campsisverse/campsismisc
+BugReports: https://github.com/campsisverse/campsismisc/issues
 Depends: 
     campsismod,
     R (>= 4.1.0)
@@ -28,11 +31,12 @@ Imports:
     dplyr,
     ggplot2,
     ggrepel,
-    lifecycle,
+    jsonlite,
+    jsonvalidate,
+    methods,
     progressr,
     purrr,
     rlang,
-    tibble,
     tidyr
 Suggests: 
     devtools,
@@ -43,25 +47,17 @@ Suggests:
     roxygen2,
     rxode2,
     testthat,
+    tibble,
     tictoc
-VignetteBuilder: 
-    knitr
-Remotes:
-    Calvagone/campsisnca@main
 Encoding: UTF-8
 Language: en-US
 LazyData: true
 Collate:
+    'campsismisc-package.R'
     'check.R'
     'utilities.R'
+    'json_interface.R'
     'generic.R'
-    'labeled_covariate.R'
-    'labeled_covariates.R'
-    'labeled_parameters.R'
-    'oat_analysis_output.R'
-    'oat_analysis_outputs.R'
-    'oat_analysis_result.R'
-    'oat_analysis_results.R'
     'oat_analysis.R'
     'forest_plot_item.R'
     'forest_plot_items.R'
@@ -71,5 +67,4 @@ Collate:
     'sensitivity_analysis_item.R'
     'sensitivity_analysis_items.R'
     'sensitivity_analysis.R'
-    'deprecated_methods.R'
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.1

@@ -3,24 +3,22 @@
 %   R/sensitivity_analysis.R
 \name{create_scenarios}
 \alias{create_scenarios}
-\alias{create_scenarios,forest_plot-method}
-\alias{create_scenarios,sensitivity_analysis-method}
+\alias{create_scenarios,forest_plot,campsis_model,dataset-method}
+\alias{create_scenarios,sensitivity_analysis,campsis_model,dataset-method}
 \title{Create scenarios.}
 \usage{
-create_scenarios(object, ...)
+create_scenarios(object, model, dataset)
 
-\S4method{create_scenarios}{forest_plot}(object, dataset, ...)
+\S4method{create_scenarios}{forest_plot,campsis_model,dataset}(object, model, dataset)
 
-\S4method{create_scenarios}{sensitivity_analysis}(object, model, ...)
+\S4method{create_scenarios}{sensitivity_analysis,campsis_model,dataset}(object, model, dataset)
 }
 \arguments{
 \item{object}{OAT analysis, type forest plot or sensitivity analysis}
 
-\item{...}{extra arguments}
+\item{model}{Campsis model}
 
 \item{dataset}{Campsis dataset}
-
-\item{model}{Campsis model}
 }
 \value{
 a list of CAMPSIS scenarios to be run

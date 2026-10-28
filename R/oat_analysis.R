@@ -4,21 +4,18 @@
 
 #' One-at-a-time analysis structure.
 #'
-#' @importFrom campsis Dataset
 #' @export
 setClass(
   "oat_analysis",
   representation(
-    model = "campsis_model",
-    dataset = "dataset",
-    outputs = "oat_analysis_outputs",
-    replicates = "integer",
-    seed = "integer",
-    dest = "character",
-    settings = "simulation_settings",
-    results = "oat_analysis_results"
+    transient_results = "data.frame",
+    transient_outputs = "ANY", # Store the NCA analysis
+    transient_model = "campsis_model" # Transient field used to store the model
   ),
-  prototype = prototype(model = CampsisModel(), dataset = campsis::Dataset(), seed = 1L)
+  prototype = prototype(
+    transient_results = data.frame(),
+    transient_model = campsismod::CampsisModel()
+  )
 )
 
 #_______________________________________________________________________________
@@ -39,31 +36,29 @@ setGeneric("compute_baseline", function(object, output) {
   standardGeneric("compute_baseline")
 })
 
-#' @rdname compute_baseline
-setMethod("compute_baseline", signature = c("tbl_df", "model_parameter_output"), definition = function(object, output) {
-  outputName <- output %>% get_name()
-  baseline <- object %>% dplyr::pull(outputName) %>% unique()
-  assertthat::assert_that(length(baseline) == 1, msg = paste0("Baseline should be unique for parameter ", outputName))
-  return(baseline)
-})
-
-#' @importFrom campsismod add export
 #' @importFrom campsisnca calculate NCAAnalysis NCATable
+#' @importFrom dplyr pull
 #' @rdname compute_baseline
-setMethod("compute_baseline", signature = c("tbl_df", "nca_metric_output"), definition = function(object, output) {
-  nca <- campsisnca::NCAAnalysis() %>%
-    add(output@metric)
-  table <- campsisnca::NCATable() %>%
+setMethod("compute_baseline", signature = c("tbl_df", "nca_metric"), definition = function(object, output) {
+  nca <- campsisnca::NCAAnalysis() |>
+    add(output)
+  table <- campsisnca::NCATable() |>
     add(nca)
-  baseline <- table %>%
-    campsisnca::calculate(x = object) %>%
+  baseline <- table |>
+    campsisnca::calculate(x = object) |>
     campsismod::export(dest = "dataframe", type = "individual")
-  return(baseline %>% dplyr::pull(value))
+  return(baseline |> dplyr::pull(.data$value))
 })
 
 #' @rdname compute_baseline
-setMethod("compute_baseline", signature = c("tbl_df", "oat_analysis_outputs"), definition = function(object, output) {
-  baselines <- output@list %>% purrr::map(~ compute_baseline(object = object, output = .x))
+setMethod("compute_baseline", signature = c("tbl_df", "nca_analysis"), definition = function(object, output) {
+  baselines <- output@metrics@list |>
+    purrr::map(function(m) {
+      if (is.na(m@variable)) {
+        m@variable <- output@variable
+      }
+      compute_baseline(object = object, output = m)
+    })
   return(baselines)
 })
 
@@ -74,106 +69,162 @@ setMethod("compute_baseline", signature = c("tbl_df", "oat_analysis_outputs"), d
 #' Create scenarios.
 #'
 #' @param object OAT analysis, type forest plot or sensitivity analysis
-#' @param ... extra arguments
+#' @param dataset Campsis dataset
+#' @param model Campsis model
 #' @return a list of CAMPSIS scenarios to be run
 #' @rdname create_scenarios
-create_scenarios <- function(object, ...) {
+create_scenarios <- function(object, model, dataset) {
   stop("No default function is provided")
 }
 
-setGeneric("create_scenarios", function(object, ...) {
+setGeneric("create_scenarios", function(object, model, dataset) {
   standardGeneric("create_scenarios")
 })
 
 #_______________________________________________________________________________
-#----                               prepare                                 ----
+#----                                utilities                              ----
 #_______________________________________________________________________________
 
+#' Process OAT outputs.
+#'
+#' @param outputs outputs as character, nca_metric or nca_analysis
+#' @return an nca_analysis object
+#' @importFrom campsisnca NCAAnalysis Last
+#' @keywords internal
+process_outputs <- function(outputs) {
+  if (is.character(outputs)) {
+    params <- outputs
+    outputs <- campsisnca::NCAAnalysis()
+    for (param in params) {
+      outputs <- outputs |> add(campsisnca::Last(variable = param, name = param))
+    }
+  }
+  if (is(outputs, "nca_metric")) {
+    outputs <- campsisnca::NCAAnalysis() |> add(outputs)
+  }
+  return(outputs)
+}
+
+#_______________________________________________________________________________
+#----                               run_analysis                            ----
+#_______________________________________________________________________________
+
+#' @importFrom dplyr filter select all_of mutate relocate any_of
 post_process_scenarios <- function(object, output) {
-  outputName <- output %>% get_name()
-  results <- object %>%
-    dplyr::filter(.data$metric == outputName) %>%
-    dplyr::select(-dplyr::all_of(c("discrete_value", "metric"))) %>% # TODO
-    dplyr::mutate(SCENARIO = factor(SCENARIO, levels = unique(SCENARIO) %>% rev())) %>%
+  results <- object |>
+    dplyr::filter(.data$metric == output |> get_name()) |>
+    dplyr::select(-dplyr::all_of(c("discrete_value", "metric"))) |> # TODO
+    dplyr::mutate(SCENARIO = factor(.data$SCENARIO, levels = unique(.data$SCENARIO) |> rev())) |>
     dplyr::relocate(dplyr::any_of(c("replicate", "id", "value", "SCENARIO")))
   return(results)
 }
 
-#' @rdname prepare
-#' @importFrom campsis Outfun Outfuns NCATableOutfun simulate
+#' @rdname run_analysis
+#' @importFrom campsis Outfun Outfuns NCATableOutfun simulate Scenario Covariate
 #' @importFrom campsisnca NCAAnalysis NCATable
 #' @importFrom progressr with_progress without_progress
-setMethod("prepare", signature = c("oat_analysis"), definition = function(object) {
-  # Fix IIV, VARCOV_OMEGA, VARCOV_SIGMA at the beginning!
-  # This way, calling disable is not needed in the scenarios
-  model <- object@model %>% disable(c("IIV", "VARCOV_OMEGA", "VARCOV_SIGMA"))
-  base_dataset <- object@dataset
-  if (is(object, "forest_plot")) {
-    base_dataset <- base_dataset %>%
-      add(object@labeled_covariates@list)
-  }
-  items <- object@items
-  outputs <- object@outputs
-  replicates <- object@replicates
-  dest <- object@dest
-  seed <- object@seed
+setMethod(
+  "run_analysis",
+  signature = c("oat_analysis", "ANY", "campsis_model", "dataset", "integer", "simulation_settings"),
+  definition = function(object, outputs, model, dataset, arm_index, settings) {
+    # Process outputs
+    outputs <- process_outputs(outputs)
 
-  # Getting all necessary 'outvars' across all outputs
-  # This in order to make 1 call to the simulate method
-  outvars <- outputs@list %>% purrr::map_chr(~ get_outvars(.x)) %>% unique()
-
-  # Compute and store baseline value of each output
-  # Progress from campsis is deactivated for the base scenario
-  base_scenario <- progressr::without_progress(
-    simulate(model = model, dataset = base_dataset, outvars = outvars, seed = seed, dest = dest)
-  )
-  baselines <- base_scenario %>% compute_baseline(output = outputs)
-
-  # Generate scenarios
-  scenarios <- object %>% create_scenarios(dataset = base_dataset, model = model)
-
-  # Prepare outfun function
-  nca <- campsisnca::NCAAnalysis(strata = c(SCENARIO = "all"))
-  nca@force_strat_vars <- "SCENARIO" # Even if there is only 1 level
-  for (output in outputs@list) {
-    if (is(output, "model_parameter_output")) {
-      nca <- nca %>%
-        add(campsisnca::Last(variable = output@name, name = output@name))
-    } else {
-      nca <- nca %>%
-        add(output@metric)
-    }
-  }
-  outfun <- campsis::NCATableOutfun(table = campsisnca::NCATable() %>% add(nca), export_type = "individual")
-  outfuns <- campsis::Outfuns() %>%
-    add(outfun)
-
-  # Simulate
-  all_results <- campsis::simulate(
-    model = model,
-    dataset = base_dataset,
-    scenarios = scenarios,
-    replicates = replicates,
-    seed = seed,
-    dest = dest,
-    outvars = outvars,
-    outfun = outfuns,
-    settings = object@settings
-  )
-
-  # Post-processing
-  tmp_results <- purrr::map2(.x = outputs@list, .y = baselines, .f = function(output, baseline) {
-    res <- OATResult(
-      output = output,
-      baseline = baseline,
-      results = post_process_scenarios(object = all_results, output = output)
+    # A few checks on the given dataset
+    assertthat::assert_that(length(dataset) == 1, msg = "Your dataset must contain exactly 1 subject.")
+    assertthat::assert_that(length(dataset@arms) == 1, msg = "Your dataset must contain exactly 1 arm.")
+    assertthat::assert_that(
+      nrow(dataset@arms@list[[1]]@bootstrap@data) == 0,
+      msg = "Your dataset cannot contain a bootstrap layer"
     )
-    return(res)
-  })
 
-  # Save
-  object@results <- OATResults() %>%
-    add(tmp_results)
+    base_dataset <- dataset
 
-  return(object)
-})
+    # Fix IIV, VARCOV_OMEGA, VARCOV_SIGMA at the beginning!
+    # This way, calling disable is not needed in the scenarios
+    model_no_var <- model |>
+      campsismod::disable(c("IIV", "VARCOV_OMEGA", "VARCOV_SIGMA"))
+
+    # Store model in object
+    object@transient_model <- model
+
+    if (is(object, "forest_plot")) {
+      # All covariates are removed for the forest plots
+      base_dataset@arms@list[[1]]@covariates@list <- list()
+
+      # Use default values provided in covariate definitions
+      for (cov_def in model_no_var@covariates@list) {
+        base_dataset <- base_dataset |>
+          add(campsis::Covariate(name = cov_def@name, distribution = cov_def@default_value))
+      }
+    } else {
+      # For sensitivity analyses, covariates are supposed to be fixed
+    }
+
+    # Preparing settings
+    settings_base_scenario <- settings
+    settings_base_scenario@hardware@cpu <- 1L
+    settings_base_scenario@hardware@replicate_parallel <- FALSE
+    settings_base_scenario@default@replicates <- 1L
+
+    # Getting all necessary 'outvars' across all outputs
+    # This in order to make 1 call to the simulate method
+    outvars <- outputs@metrics@list |>
+      purrr::map_chr(\(x) if (is.na(x@variable)) outputs@variable else x@variable) |>
+      unique()
+
+    # Storing outvars in the default arguments
+    settings_base_scenario@default@outvars <- outvars
+    settings@default@outvars <- outvars
+
+    # Compute and store baseline value of each output
+    # Progress from campsis is deactivated for the base scenario
+    base_scenario <- progressr::without_progress(
+      campsis::simulate(
+        model = model_no_var,
+        dataset = base_dataset,
+        settings = settings_base_scenario
+      )
+    )
+    baselines <- base_scenario |>
+      compute_baseline(output = outputs)
+
+    # Generate scenarios
+    scenarios <- object |>
+      create_scenarios(model = model_no_var, dataset = base_dataset)
+
+    # Prepare outfun function
+    nca <- outputs
+    nca@strata <- c(SCENARIO = "all")
+    nca@force_strat_vars <- "SCENARIO" # Even if there is only 1 level
+
+    outfun <- campsis::NCATableOutfun(table = campsisnca::NCATable() |> add(nca), export_type = "individual")
+    outfuns <- campsis::Outfuns() |>
+      add(outfun)
+
+    # Storing outfuns in the default arguments
+    settings@default@outfuns <- outfuns
+
+    # Simulate
+    all_results <- campsis::simulate(
+      model = model_no_var,
+      dataset = base_dataset,
+      scenarios = scenarios,
+      settings = settings
+    )
+
+    # Post-processing
+    transient_results <- purrr::imap_dfr(.x = outputs@metrics@list, .f = function(output, index) {
+      res <- post_process_scenarios(object = all_results, output = output)
+      res$output_index <- index
+      res$baseline <- baselines[[index]]
+      return(res)
+    })
+
+    # Save
+    object@transient_results <- transient_results
+    object@transient_outputs <- outputs
+
+    return(object)
+  }
+)
